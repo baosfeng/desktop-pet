@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	llm.Register("ollama", func(cfg map[string]any) (llm.Provider, error) {
+	llm.Register("ollama", func(_ map[string]any) (llm.Provider, error) {
 		return nil, fmt.Errorf("ollama: not yet implemented")
 	})
 }

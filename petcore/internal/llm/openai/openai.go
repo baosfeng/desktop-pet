@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	llm.Register("openai", func(cfg map[string]any) (llm.Provider, error) {
+	llm.Register("openai", func(_ map[string]any) (llm.Provider, error) {
 		return nil, fmt.Errorf("openai: not yet implemented")
 	})
 }

@@ -32,10 +32,13 @@ func init() {
 // Provider 是一个本地模拟 LLM Provider。
 type Provider struct{}
 
+// Name 返回 Provider 名称。
 func (p *Provider) Name() string { return "mock" }
 
+// Model 返回当前模型名称。
 func (p *Provider) Model() string { return "mock-v1" }
 
+// Stream 执行流式对话并返回结果片段通道。
 func (p *Provider) Stream(_ context.Context, req llm.Request) (<-chan llm.Chunk, error) {
 	ch := make(chan llm.Chunk, 10)
 
@@ -74,6 +77,7 @@ func (p *Provider) Stream(_ context.Context, req llm.Request) (<-chan llm.Chunk,
 	return ch, nil
 }
 
+// Chat 执行非流式对话并返回完整响应。
 func (p *Provider) Chat(_ context.Context, req llm.Request) (llm.Response, error) {
 	reply := os.Getenv("MOCK_LLM_REPLY")
 	if reply == "" {

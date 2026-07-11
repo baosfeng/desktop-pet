@@ -40,7 +40,7 @@ type Request struct {
 
 // Message 表示一条对话消息。
 type Message struct {
-	Role    string   // system / user / assistant / tool
+	Role    string // system / user / assistant / tool
 	Content string
 	Images  []Image // 可选：多模态
 }
@@ -64,13 +64,14 @@ type Chunk struct {
 // ChunkType 表示流式片段的类型。
 type ChunkType int
 
+// 预定义的 Chunk 类型常量。
 const (
-	ChunkText     ChunkType = iota // 文本片段
-	ChunkReasoning                 // 推理过程
-	ChunkToolCall                  // 工具调用
-	ChunkUsage                     // token 用量
-	ChunkDone                      // 流结束
-	ChunkError                     // 错误
+	ChunkText      ChunkType = iota // 文本片段
+	ChunkReasoning                  // 推理过程
+	ChunkToolCall                   // 工具调用
+	ChunkUsage                      // token 用量
+	ChunkDone                       // 流结束
+	ChunkError                      // 错误
 )
 
 // Response 是非流式对话的完整响应。
