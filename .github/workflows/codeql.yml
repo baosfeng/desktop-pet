@@ -59,7 +59,18 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Initialize CodeQL
+      # Rust: 指定源码目录以便 CodeQL 正确分析
+      - if: matrix.language == 'rust'
+        name: Initialize CodeQL (Rust)
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-and-quality
+          source-root: src-tauri
+
+      - if: matrix.language != 'rust'
+        name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
