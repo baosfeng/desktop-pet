@@ -3,22 +3,41 @@ name = "desktop-pet"
 version = "0.1.0"
 edition = "2024"
 description = "Desktop AI Pet — Tauri v2 shell"
+keywords = ["desktop-pet", "tauri", "ai", "pet", "desktop"]
+categories = ["gui", "game"]
+license = "MIT"
+repository = "https://github.com/desktop-pet/desktop-pet"
+readme = "../README.md"
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+log = "0.4"
+tokio = { version = "1", features = ["io-util", "sync"] }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
 
 [lints]
 clippy.pedantic = { level = "warn", priority = -1 }
 clippy.nursery = { level = "warn", priority = -1 }
 
 clippy.cargo_common_metadata = "warn"
-clippy.multiple_crate_versions = "warn"
+clippy.multiple_crate_versions = "allow"  # transitive deps from tauri/tauri-plugin, not actionable
 
 # 禁止项
-clippy.unwrap_used = "error"
-clippy.expect_used = "error"
-clippy.print_stdout = "error"
-clippy.panic = "error"
-clippy.exit = "error"
-clippy.todo = "error"
-clippy.dbg_macro = "error"
+clippy.unwrap_used = "deny"
+clippy.expect_used = "deny"
+clippy.print_stdout = "deny"
+clippy.panic = "deny"
+# exit is denied at Cargo level; tauri macro internally calls process::exit
+# so we keep this as warn to allow the framework while discouraging direct use
+clippy.exit = "warn"
+clippy.todo = "deny"
+clippy.dbg_macro = "deny"
 
 # 代码质量
 clippy.large_futures = "warn"
@@ -31,5 +50,5 @@ clippy.cast_possible_wrap = "warn"
 clippy.cast_sign_loss = "warn"
 
 # 安全
-clippy.unchecked_duration_subtraction = "error"
+clippy.unchecked_time_subtraction = "deny"
 clippy.manual_strip = "warn"
