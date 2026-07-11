@@ -56,6 +56,13 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      # Tauri 需要系统库（Rust 编译需要 glib/gtk/webkit）
+      - name: Install system deps
+        if: matrix.lang.name == 'Rust'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
       - name: Setup Rust
         if: matrix.lang.name == 'Rust'
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -91,7 +98,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run linter
-        run: ${{ matrix.lang.lint-cmd }}
+        run: cd ${{ matrix.lang.dir }} && ${{ matrix.lang.lint-cmd }}
 
       - name: Run cargo-audit
         if: matrix.lang.name == 'Rust'
@@ -127,6 +134,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      # Tauri 需要系统库
+      - name: Install system deps
+        if: matrix.lang.name == 'Rust'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libglib2.0-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Setup Rust
         if: matrix.lang.name == 'Rust'
@@ -168,7 +182,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: ${{ matrix.lang.test-cmd }}
+        run: cd ${{ matrix.lang.dir }} && ${{ matrix.lang.test-cmd }}
 
   # ==========================================
   # Coverage: 覆盖率门禁
