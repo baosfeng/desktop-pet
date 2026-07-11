@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - esbuild
+overrides:
+  gh-pages: 5.0.0
+minimumReleaseAge: 0
