@@ -16,14 +16,14 @@ export interface Message {
 
 const TYPEWRITER_SPEED_MS = 30;
 
-export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps) {
+export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): JSX.Element {
   const [inputText, setInputText] = useState("");
   const [typingIndex, setTypingIndex] = useState<number | null>(null);
   const [visibleChars, setVisibleChars] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
   // The latest assistant message being typewriter-displayed
-  const latestAssistantIndex = (() => {
+  const latestAssistantIndex = ((): number | null => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
       if (msg?.role === "assistant") {
@@ -54,7 +54,7 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps) {
       const timer = setTimeout(() => {
         setVisibleChars((prev) => prev + 1);
       }, TYPEWRITER_SPEED_MS);
-      return () => {
+      return (): void => {
         clearTimeout(timer);
       };
     }

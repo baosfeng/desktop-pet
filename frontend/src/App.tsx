@@ -21,7 +21,7 @@ function generateId(): string {
   return `msg-${String(nextId)}-${String(Date.now())}`;
 }
 
-export default function App() {
+export default function App(): JSX.Element {
   const [messages, setMessages] = useState<Message[]>([]);
   const [petState, setPetState] = useState<string>("idle");
   const [showSettings, setShowSettings] = useState(false);
@@ -41,7 +41,7 @@ export default function App() {
       }
     });
 
-    return () => {
+    return (): void => {
       void unlistenPromise.then((unlisten) => {
         unlisten();
       });

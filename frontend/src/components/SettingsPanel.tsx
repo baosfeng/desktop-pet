@@ -39,7 +39,7 @@ function saveSettings(settings: Settings): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
-export function SettingsPanel({ onClose }: SettingsPanelProps) {
+export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
   const [settings, setSettings] = useState<Settings>(loadSettings);
 
   const handleChange = useCallback((field: keyof Settings, value: string | number) => {
