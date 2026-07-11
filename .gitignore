@@ -1,0 +1,38 @@
+# Go PetCore
+petcore/petcore
+petcore/petcore.exe
+*.exe
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/binaries/
+
+# Frontend (React + Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Build output
+*.dmg
+*.app
+*.zip
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Scan cache (temp artifacts)
+.scan-cache/
+
+# Logs
+*.log
+docs/superpowers/specs
+.reasonix
+reasonix.toml
