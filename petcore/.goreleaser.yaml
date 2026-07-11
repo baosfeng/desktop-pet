@@ -1,0 +1,65 @@
+# .goreleaser.yaml
+# Go PetCore 跨平台发布配置
+# 安装：brew install goreleaser
+# 文档：https://goreleaser.com
+---
+version: 2
+
+project_name: petcore
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: petcore
+    dir: .
+    main: ./cmd/petcore/
+    binary: petcore
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .Date }}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: linux
+        goarch: arm64
+
+archives:
+  - id: petcore-bin
+    formats: ["binary"]
+    name_template: "{{ .Binary }}-{{ .Os }}-{{ .Arch }}{{ .Ext }}"
+
+# Tauri sidecar 命名约定
+# macOS  ARM:  petcore-aarch64-apple-darwin
+# macOS  x64:  petcore-x86_64-apple-darwin
+# Windows x64: petcore-x86_64-pc-windows-msvc.exe
+# Linux  x64:  petcore-x86_64-unknown-linux-gnu
+nfpms:
+  - id: petcore
+    package_name: petcore
+    file_name_template: "{{ .ConventionalFileName }}"
+    formats:
+      - deb
+      - rpm
+    description: "Desktop Pet Core Engine"
+    maintainer: "desktop-pet <dev@desktop-pet.app>"
+    license: "MIT"
+
+release:
+  github:
+    owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+    name: "desktop-pet"
+  draft: true
+  name_template: "v{{ .Version }}"
