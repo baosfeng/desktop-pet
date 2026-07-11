@@ -2,7 +2,7 @@
 //
 // 使用方式：
 //
-//	import "github.com/user/desktop-pet/petcore/internal/llm/mock"
+//	import "github.com/desktop-pet/petcore/internal/llm/mock"
 //	// mock 在 init() 中自动注册为 "mock" Provider
 //
 //	provider, _ := llm.NewProvider("mock", nil)
@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/user/desktop-pet/petcore/internal/llm"
+	"github.com/desktop-pet/petcore/internal/llm"
 )
 
 func init() {
