@@ -90,7 +90,7 @@ jobs:
 
       - name: Install frontend deps
         if: matrix.lang.name == 'Frontend'
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: frontend
 
       - name: Run linter
@@ -172,7 +172,7 @@ jobs:
 
       - name: Install frontend deps
         if: matrix.lang.name == 'Frontend'
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: frontend
 
       - name: Run tests
@@ -268,7 +268,7 @@ jobs:
       - name: Install frontend deps
         run: |
           cd frontend
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --ignore-scripts
 
       # 验证可以编译（不进行完整打包，节省 CI 时间）
       - name: Verify Tauri build
