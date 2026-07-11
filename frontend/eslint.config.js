@@ -1,12 +1,12 @@
 // ESLint v9 Flat Config
 // 文档：https://eslint.org/docs/latest/use/configure/configuration-files
 // 前置安装：pnpm add -D eslint @eslint/js typescript-eslint eslint-config-prettier eslint-plugin-react-hooks
-
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import reactHooks from "eslint-plugin-react-hooks";
 import prettier from "eslint-config-prettier";
+import reactHooks from "eslint-plugin-react-hooks";
+import tseslint from "typescript-eslint";
 
+// eslint-disable-next-line @typescript-eslint/no-deprecated
 export default tseslint.config(
   // 全局忽略
   { ignores: ["dist/", ".vite/", "node_modules/"] },
@@ -20,7 +20,10 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ["eslint.config.js"],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         tsconfigRootDir: import.meta.dirname,
       },
     },

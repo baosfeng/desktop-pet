@@ -1,0 +1,50 @@
+import { invoke } from "@tauri-apps/api/core";
+import { type UnlistenFn, listen } from "@tauri-apps/api/event";
+
+/* ------------------------------------------------------------------ */
+/*  Tauri Commands                                                     */
+/* ------------------------------------------------------------------ */
+
+export async function sendMessage(text: string): Promise<void> {
+  await invoke("chat", { text });
+}
+
+export async function toggleClickthrough(enabled: boolean): Promise<void> {
+  await invoke("toggle_clickthrough", { enabled });
+}
+
+export async function getWindowPosition(): Promise<{ x: number; y: number }> {
+  return await invoke("get_window_position");
+}
+
+export async function setWindowPosition(x: number, y: number): Promise<void> {
+  await invoke("set_window_position", { x, y });
+}
+
+export async function getStatus(): Promise<Record<string, unknown>> {
+  return await invoke("get_status");
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tauri Events                                                       */
+/* ------------------------------------------------------------------ */
+
+export interface PetEvent {
+  kind: string;
+  data: Record<string, unknown>;
+}
+
+export function onPetEvent(handler: (event: PetEvent) => void): Promise<UnlistenFn> {
+  return listen<PetEvent>("pet:event", (e) => {
+    handler(e.payload);
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Domain Types                                                       */
+/* ------------------------------------------------------------------ */
+
+export interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
