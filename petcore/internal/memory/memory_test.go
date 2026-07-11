@@ -122,7 +122,7 @@ func TestInMemoryManager_SearchLimit(t *testing.T) {
 	}
 }
 
-func TestInMemoryManager_ConcurrentSafe(t *testing.T) {
+func TestInMemoryManager_ConcurrentSafe(_ *testing.T) {
 	m := NewInMemoryManager()
 	done := make(chan struct{})
 	go func() {
@@ -143,7 +143,7 @@ func TestInMemoryManager_ConcurrentSafe(t *testing.T) {
 	<-done
 }
 
-func TestManagerInterface(t *testing.T) {
+func TestManagerInterface(_ *testing.T) {
 	// 编译时验证
 	var _ Manager = (*InMemoryManager)(nil)
 }

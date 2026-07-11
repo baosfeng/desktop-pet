@@ -53,18 +53,21 @@ type InMemoryManager struct {
 	longTerm  []Fact
 }
 
+// NewInMemoryManager 创建一个空的 InMemoryManager 实例。
 func NewInMemoryManager() *InMemoryManager {
 	return &InMemoryManager{
 		core: make(map[string]Fact),
 	}
 }
 
+// AddShortTerm 添加一条消息到短期记忆。
 func (m *InMemoryManager) AddShortTerm(msg Message) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.shortTerm = append(m.shortTerm, msg)
 }
 
+// GetShortTerm 返回短期记忆中的所有消息。
 func (m *InMemoryManager) GetShortTerm() []Message {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -73,12 +76,14 @@ func (m *InMemoryManager) GetShortTerm() []Message {
 	return out
 }
 
+// ClearShortTerm 清空短期记忆。
 func (m *InMemoryManager) ClearShortTerm() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.shortTerm = nil
 }
 
+// Remember 保存一条核心记忆。
 func (m *InMemoryManager) Remember(key, value string, importance int) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -86,6 +91,7 @@ func (m *InMemoryManager) Remember(key, value string, importance int) error {
 	return nil
 }
 
+// Recall 根据键名检索核心记忆。
 func (m *InMemoryManager) Recall(key string) (string, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -96,6 +102,7 @@ func (m *InMemoryManager) Recall(key string) (string, error) {
 	return fact.Value, nil
 }
 
+// GetAllCore 返回所有核心记忆的键值对。
 func (m *InMemoryManager) GetAllCore() (map[string]string, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -106,6 +113,7 @@ func (m *InMemoryManager) GetAllCore() (map[string]string, error) {
 	return out, nil
 }
 
+// Store 保存一条长期记忆事实。
 func (m *InMemoryManager) Store(_ context.Context, fact Fact) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -113,6 +121,7 @@ func (m *InMemoryManager) Store(_ context.Context, fact Fact) error {
 	return nil
 }
 
+// Search 根据查询字符串搜索长期记忆。
 func (m *InMemoryManager) Search(_ context.Context, query string, limit int) ([]Fact, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
