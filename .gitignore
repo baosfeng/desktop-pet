@@ -29,6 +29,12 @@ frontend/.vite/
 .DS_Store
 Thumbs.db
 
+# Environment variables (API keys, secrets)
+.env
+.env.*
+!.env.example
+!.env.template
+
 # Scan cache (temp artifacts)
 .scan-cache/
 
