@@ -77,6 +77,7 @@ export default tseslint.config(
   // JSX 无障碍规则
   {
     plugins: {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       "jsx-a11y": jsxA11y,
     },
     rules: {
