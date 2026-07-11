@@ -5,7 +5,7 @@
 如果发现安全漏洞，**请不要公开提交 Issue**。请通过以下方式私下报告：
 
 1. **GitHub Security Advisory**: 访问仓库 → Security → Report a vulnerability
-2. **Email**: 发送至 [security@desktop-pet.app]（如已配置）
+2. **Email**: 发送至 [baosfeng@gmail.com]
 
 我们会在 **48 小时内**确认收到，并尽快修复。
 

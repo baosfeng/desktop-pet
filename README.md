@@ -5,7 +5,7 @@
 
   **一个像 QQ 宠物一样在桌面上陪伴你，接入 AI 大模型、越用越懂你的桌面伴侣。**
 
-  [![CI](https://github.com/user/desktop-pet/actions/workflows/ci.yml/badge.svg)](https://github.com/user/desktop-pet/actions/workflows/ci.yml)
+  [![CI](https://github.com/baosfeng/desktop-pet/actions/workflows/ci.yml/badge.svg)](https://github.com/baosfeng/desktop-pet/actions/workflows/ci.yml)
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![Rust](https://img.shields.io/badge/Rust-1.80+-orange)](https://www.rust-lang.org)
   [![Go](https://img.shields.io/badge/Go-1.23+-blue)](https://go.dev)
@@ -38,7 +38,7 @@
 
 ### 下载
 
-从 [Releases 页面](https://github.com/user/desktop-pet/releases) 下载最新 `.dmg`（macOS）或 `.msi`（Windows）。
+从 [Releases 页面](https://github.com/baosfeng/desktop-pet/releases) 下载最新 `.dmg`（macOS）或 `.msi`（Windows）。
 
 ### 从源码构建
 
@@ -51,7 +51,7 @@
 #    - Tauri CLI v2 (cargo install tauri-cli --version "^2")
 
 # 2. 启动开发环境
-git clone https://github.com/user/desktop-pet.git
+git clone https://github.com/baosfeng/desktop-pet.git
 cd desktop-pet
 make dev
 
