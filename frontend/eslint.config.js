@@ -1,9 +1,13 @@
 // ESLint v9 Flat Config
 // 文档：https://eslint.org/docs/latest/use/configure/configuration-files
 // 前置安装：pnpm add -D eslint @eslint/js typescript-eslint eslint-config-prettier eslint-plugin-react-hooks
+//          eslint-plugin-react eslint-plugin-jsx-a11y eslint-plugin-import
 import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import reactHooks from "eslint-plugin-react-hooks";
+import reactPlugin from "eslint-plugin-react";
+import jsxA11y from "eslint-plugin-jsx-a11y";
+import importPlugin from "eslint-plugin-import";
 import tseslint from "typescript-eslint";
 
 // eslint-disable-next-line @typescript-eslint/no-deprecated
@@ -14,9 +18,11 @@ export default tseslint.config(
   // 基础 JS 推荐规则
   js.configs.recommended,
 
-  // TypeScript 严格规则
+  // TypeScript 严格规则 + 风格规则
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
+
+  // TypeScript 解析器配置
   {
     languageOptions: {
       parserOptions: {
@@ -39,13 +45,70 @@ export default tseslint.config(
     },
   },
 
+  // React 规则
+  {
+    plugins: {
+      react: reactPlugin,
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
+    rules: {
+      ...reactPlugin.configs.recommended.rules,
+      // React 18+ 不需要显式 import React
+      "react/react-in-jsx-scope": "off",
+      // 使用 TypeScript，不需要 prop-types
+      "react/prop-types": "off",
+      // 自闭合标签
+      "react/self-closing-comp": "warn",
+      // 简化 boolean 属性表达式
+      "react/jsx-boolean-value": ["warn", "never"],
+      // 禁止不必要的 Fragment
+      "react/jsx-no-useless-fragment": "warn",
+      // JSX 中花括号使用规范
+      "react/jsx-curly-brace-presence": ["warn", { props: "never", children: "never" }],
+      // 禁止在 JSX 中使用未转义字符
+      "react/no-unescaped-entities": "error",
+    },
+  },
+
+  // JSX 无障碍规则
+  {
+    plugins: {
+      "jsx-a11y": jsxA11y,
+    },
+    rules: {
+      "jsx-a11y/alt-text": "warn",
+      "jsx-a11y/aria-props": "warn",
+      "jsx-a11y/aria-proptypes": "warn",
+      "jsx-a11y/aria-unsupported-elements": "warn",
+      "jsx-a11y/role-has-required-aria-props": "warn",
+      "jsx-a11y/role-supports-aria-props": "warn",
+    },
+  },
+
+  // Import 规则
+  {
+    plugins: {
+      import: importPlugin,
+    },
+    rules: {
+      "import/first": "error",
+      "import/no-duplicates": "error",
+      "import/newline-after-import": "warn",
+      "import/no-default-export": "off",
+    },
+  },
+
   // 项目自定义规则
   {
     rules: {
       // 禁止 any（除非显式标注）
       "@typescript-eslint/no-explicit-any": "error",
 
-      // 禁止未使用的变量
+      // 禁止未使用的变量（_ 前缀豁免）
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
@@ -60,6 +123,9 @@ export default tseslint.config(
       // 禁止空函数
       "@typescript-eslint/no-empty-function": "error",
 
+      // 禁止混淆的 void 表达式
+      "@typescript-eslint/no-confusing-void-expression": "error",
+
       // 强制使用 ===
       eqeqeq: ["error", "always"],
 
@@ -68,6 +134,15 @@ export default tseslint.config(
 
       // 禁止 debugger
       "no-debugger": "error",
+
+      // 禁止 alert
+      "no-alert": "warn",
+
+      // 禁止函数参数修改
+      "no-param-reassign": "error",
+
+      // 强制对象简写语法
+      "object-shorthand": ["error", "always"],
     },
   },
 
