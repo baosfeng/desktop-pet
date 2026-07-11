@@ -77,7 +77,7 @@ func TestTransitionsFrom_UnknownState(t *testing.T) {
 	}
 }
 
-func TestMachineInterface(t *testing.T) {
+func TestMachineInterface(_ *testing.T) {
 	var _ Machine = (*MockMachine)(nil)
 }
 
@@ -94,16 +94,40 @@ func TestMockMachine_DefaultBehavior(t *testing.T) {
 func TestMockMachine_OnTransition(t *testing.T) {
 	m := NewMockMachine(StateIdle)
 	called := false
+	var fromState, toState State
 	m.OnTransition(func(from, to State) {
 		called = true
+		fromState = from
+		toState = to
 	})
-	_ = m.Transition(event.EventStateChanged)
-	// MockMachine.Transition is a no-op, but OnTransition handler is stored
-	if m.Current() != StateIdle {
-		t.Errorf("expected state unchanged in mock")
+	err := m.Transition(event.EventStateChanged)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	m.onFn(StateIdle, StateAttention)
+	if m.Current() != StateAttention {
+		t.Errorf("Current() = %q, want %q", m.Current(), StateAttention)
+	}
 	if !called {
-		t.Error("expected OnTransition callback to be callable")
+		t.Error("expected OnTransition callback to be called")
+	}
+	if fromState != StateIdle {
+		t.Errorf("fromState = %q, want %q", fromState, StateIdle)
+	}
+	if toState != StateAttention {
+		t.Errorf("toState = %q, want %q", toState, StateAttention)
+	}
+}
+
+func TestMockMachine_InvalidTransition(t *testing.T) {
+	m := NewMockMachine(StateIdle)
+	err := m.Transition(event.EventAgentReply)
+	if err == nil {
+		t.Fatal("expected error for invalid transition")
+	}
+	if _, ok := err.(*ErrTransitionNotAllowed); !ok {
+		t.Errorf("expected ErrTransitionNotAllowed, got %T", err)
+	}
+	if m.Current() != StateIdle {
+		t.Errorf("state should remain unchanged after invalid transition")
 	}
 }

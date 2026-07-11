@@ -4,11 +4,16 @@
 // 不依赖 agent / memory / config 等其他 petcore 模块。
 package fsm
 
-import "github.com/desktop-pet/petcore/internal/event"
+import (
+	"sync"
+
+	"github.com/desktop-pet/petcore/internal/event"
+)
 
 // State 表示宠物的行为状态。
 type State string
 
+// 预定义状态常量。
 const (
 	StateIdle        State = "idle"        // 待机 — 鼠标穿透开启，随机小动作
 	StateAttention   State = "attention"   // 关注 — 检测到用户，转向鼠标
@@ -68,7 +73,7 @@ func IsValidTransition(from State, evt event.Type) bool {
 	return ok
 }
 
-// transitionsFrom 返回从指定状态出发的所有合法事件。
+// TransitionsFrom 返回从指定状态出发的所有合法事件。
 func TransitionsFrom(s State) []event.Type {
 	var evts []event.Type
 	for evt := range transitionRules[s] {
@@ -81,13 +86,42 @@ func TransitionsFrom(s State) []event.Type {
 
 // MockMachine 是 Machine 接口的简单内存实现。
 type MockMachine struct {
+	mu      sync.RWMutex
 	current State
 	onFn    func(from, to State)
 }
 
-func (m *MockMachine) Current() State                      { return m.current }
-func (m *MockMachine) Transition(evt event.Type) error      { return nil }
-func (m *MockMachine) OnTransition(fn func(from, to State)) { m.onFn = fn }
+// Current 返回当前状态（线程安全）。
+func (m *MockMachine) Current() State {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.current
+}
+
+// Transition 尝试根据事件类型进行状态转换。
+// 如果转换合法，更新当前状态并调用已注册的回调。
+// 如果转换非法，返回 ErrTransitionNotAllowed。
+func (m *MockMachine) Transition(evt event.Type) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	next, ok := transitionRules[m.current][evt]
+	if !ok {
+		return &ErrTransitionNotAllowed{From: m.current, Evt: evt}
+	}
+	from := m.current
+	m.current = next
+	if m.onFn != nil {
+		m.onFn(from, next)
+	}
+	return nil
+}
+
+// OnTransition 注册状态转换回调（线程安全）。
+func (m *MockMachine) OnTransition(fn func(from, to State)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onFn = fn
+}
 
 // NewMockMachine 创建一个从指定初始状态开始的 MockMachine。
 func NewMockMachine(initial State) *MockMachine {
