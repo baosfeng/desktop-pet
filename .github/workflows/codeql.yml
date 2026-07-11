@@ -1,0 +1,69 @@
+# CodeQL 安全分析
+# 每次推送到 main 和 develop 时，以及每周定时运行
+---
+name: "CodeQL"
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 8 * * 1" # 每周一 08:00 UTC
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: autobuild
+          - language: javascript-typescript
+            build-mode: none
+          - language: rust
+            build-mode: autobuild
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Go 需要 setup
+      - if: matrix.language == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      # Rust 需要 setup
+      - if: matrix.language == 'rust'
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      # Node.js 用于 JS/TS 分析
+      - if: matrix.language == 'javascript-typescript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-and-quality
+
+      - if: matrix.build-mode == 'autobuild'
+        name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
