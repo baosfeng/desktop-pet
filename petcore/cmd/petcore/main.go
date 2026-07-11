@@ -29,10 +29,22 @@ import (
 func main() {
 	cliMode := flag.Bool("cli", false, "启动 CLI 模式（交互式对话）")
 	configPath := flag.String("config", "", "配置文件路径（默认 ~/.desktop-pet/config.toml）")
+	envFlag := flag.String("env", "", "运行环境：development / production（默认 auto，从 PETCORE_ENV 环境变量读取）")
 	flag.Parse()
 
 	log.InitLogger()
-	log.Info("PetCore starting", "cli", *cliMode)
+
+	// 检测运行环境
+	runEnv := config.CurrentEnv()
+	if *envFlag != "" {
+		switch config.Environment(*envFlag) {
+		case config.EnvDevelopment, config.EnvProduction:
+			runEnv = config.Environment(*envFlag)
+		default:
+			log.Warn("invalid env flag, falling back to auto-detected", "flag", *envFlag, "detected", runEnv)
+		}
+	}
+	log.Info("PetCore starting", "cli", *cliMode, "env", runEnv)
 
 	// 加载配置
 	cfgPath := *configPath
@@ -44,7 +56,7 @@ func main() {
 			cfgPath = home + "/.desktop-pet/config.toml"
 		}
 	}
-	cfg, err := config.Load(cfgPath)
+	cfg, err := config.Load(cfgPath, runEnv)
 	if err != nil {
 		log.Error("failed to load config", "error", err, "path", cfgPath)
 		os.Exit(1)
