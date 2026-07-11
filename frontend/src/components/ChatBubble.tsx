@@ -34,13 +34,14 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps) {
   })();
 
   // Start / restart typewriter when a new assistant message arrives
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- 打字机效果需要响应式重置
+  /* eslint-disable react-hooks/set-state-in-effect -- 打字机效果需要响应式重置 */
   useEffect(() => {
     if (latestAssistantIndex !== typingIndex) {
       setTypingIndex(latestAssistantIndex);
       setVisibleChars(0);
     }
   }, [latestAssistantIndex, typingIndex]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Typewriter character reveal
   useEffect(() => {
@@ -67,7 +68,7 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps) {
   }, [messages, visibleChars]);
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    (e: React.SyntheticEvent) => {
       e.preventDefault();
       const trimmed = inputText.trim();
       if (trimmed.length === 0) return;
