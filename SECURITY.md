@@ -28,6 +28,18 @@
 | 密钥泄露检测 | pre-commit hook（lefthook） |
 | Go 代码安全检查 | gosec（golangci-lint 集成） |
 
+## API Key 管理
+
+本项目使用 LLM API Key，必须安全管理：
+
+| 要求 | 说明 |
+|------|------|
+| **环境变量** | API Key 通过 `LLMConfig.APIKeyEnv` 指定的环境变量读取，绝不硬编码在代码或配置文件中 |
+| **最小权限** | 使用的 API Key 仅赋予 LLM 调用权限，不赋予管理/计费权限 |
+| **轮换周期** | 建议每 **90 天** 轮换一次 API Key |
+| **密钥管理工具** | 推荐使用 1Password CLI、Doppler 或 macOS Keychain 管理环境变量 |
+| **泄露响应** | 发现泄露立即在 LLM 服务商控制台吊销密钥，然后更新环境变量 |
+
 ## 漏洞处理流程
 
 1. 报告者提交漏洞

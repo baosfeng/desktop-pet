@@ -62,14 +62,43 @@ test: 添加 FSM 模糊测试
 | `develop` | 开发集成分支 |
 | `feat/*` | 功能分支，从 develop 切出 |
 | `fix/*` | 修复分支 |
+| `hotfix/*` | 紧急修复分支，从 main 切出，修复后同时合并回 main 和 develop |
 
-## PR 流程
+## PR 规范
+
+### 大小限制
+
+- **1 PR ≤ 400 行 diff**（含测试代码），超过需在 PR 描述中说明理由
+- 大功能应拆分为多个 MVI（最小可验证增量），每个独立提交 Review
+
+### PR 流程
 
 1. 从 `develop` 切出功能分支
-2. 实现代码 + 测试
+2. 实现代码 + 测试（验收标准见[质量基线](../docs/开发指南/质量基线.md)）
 3. 确保所有 linter 和测试通过
-4. 提交 PR 到 `develop`
-5. 等待 Code Review
+4. 合并前需 ≥1 人 Code Review
+5. 提交 PR 到 `develop`
+6. Code Review 重点：接口设计、边界情况、测试覆盖
+
+### 热修复流程
+
+```bash
+# 1. 从 main 切出
+git checkout main
+git checkout -b hotfix/xxx-简短描述
+
+# 2. 修复 + 提交
+git commit -m "fix: 修复 xxx"
+
+# 3. 创建 PR → Review → 合并到 main
+# 4. 打标签发布
+git tag v0.x.y
+git push origin v0.x.y
+
+# 5. 同时合并回 develop
+git checkout develop
+git merge main
+```
 
 ## 提问
 
