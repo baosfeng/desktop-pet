@@ -26,7 +26,7 @@ type Agent interface {
 
 // Request 是 Agent 的输入请求。
 type Request struct {
-	Messages    []llm.Message
+	Messages     []llm.Message
 	SystemPrompt string
 }
 
@@ -63,7 +63,6 @@ type agentImpl struct {
 	memory   memory.Manager
 	tool     tool.Registry
 	sink     event.Sink
-	maxTurns int
 }
 
 func (a *agentImpl) SetSink(sink event.Sink) {

@@ -51,8 +51,10 @@ func (p *Pipeline) build(index int) StageFunc {
 // PreProcessStage 消息标准化、过滤。
 type PreProcessStage struct{}
 
+// Name 返回阶段名称。
 func (s *PreProcessStage) Name() string { return "PreProcess" }
 
+// Process 执行消息标准化、过滤等预处理。
 func (s *PreProcessStage) Process(ctx context.Context, pCtx *pipelineCtx, next StageFunc) error {
 	// TODO: Phase 2 — 敏感词过滤、消息长度限制
 	return next(ctx, pCtx)
@@ -63,8 +65,10 @@ type MemoryStage struct {
 	memory memory.Manager
 }
 
+// Name 返回阶段名称。
 func (s *MemoryStage) Name() string { return "Memory" }
 
+// Process 注入相关记忆到上下文。
 func (s *MemoryStage) Process(ctx context.Context, pCtx *pipelineCtx, next StageFunc) error {
 	// TODO: Phase 2 — 从 memory 检索短期 + 长期记忆，注入到 SystemPrompt/Messages
 	return next(ctx, pCtx)
@@ -77,13 +81,15 @@ type LLMCallStage struct {
 	tool     tool.Registry
 }
 
+// Name 返回阶段名称。
 func (s *LLMCallStage) Name() string { return "LLMCall" }
 
+// Process 调用 LLM Provider，处理流式回复和工具调用。
 func (s *LLMCallStage) Process(ctx context.Context, pCtx *pipelineCtx, next StageFunc) error {
 	// 构建 LLM Request
 	req := llm.Request{
 		Messages:     pCtx.Request.Messages,
-		SystemPrompt: pCtx.Request.SystemPrompt,
+		SystemPrompt: pCtx.SystemPrompt,
 	}
 
 	// 发送思考事件
@@ -129,8 +135,10 @@ type PostProcessStage struct {
 	sink   event.Sink
 }
 
+// Name 返回阶段名称。
 func (s *PostProcessStage) Name() string { return "PostProcess" }
 
+// Process 执行后处理：事实提取等。
 func (s *PostProcessStage) Process(ctx context.Context, pCtx *pipelineCtx, next StageFunc) error {
 	// TODO: Phase 2 — 提取新事实并写入记忆
 	return next(ctx, pCtx)
