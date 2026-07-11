@@ -5,6 +5,11 @@
 // - 从 stdout 读取 JSON 事件并转发给前端
 // - 发送 ping 健康检查
 // - 自动重启（最多 3 次）
+// CodeQL's rust/unused-variable does not recognize Rust named capture format {e},
+// so use _e/_status prefix to avoid false positives.
+#![allow(clippy::used_underscore_binding)]
+
+
 use std::sync::Mutex;
 
 use log::{error, info, warn};
@@ -79,8 +84,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
         let shell = handle.shell();
         let sidecar_cmd = match shell.sidecar("petcore") {
             Ok(cmd) => cmd,
-            Err(e) => {
-                error!("failed to create sidecar command: {e}");
+            Err(_e) => {
+                error!("failed to create sidecar command: {_e}");
                 if attempt < max_retries - 1 {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                 }
@@ -91,8 +96,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
         // 使用 spawn 获取命令事件流和子进程句柄
         let (mut rx, child) = match sidecar_cmd.args(["--mode", "sidecar"]).spawn() {
             Ok(spawned) => spawned,
-            Err(e) => {
-                error!("failed to spawn sidecar: {e}");
+            Err(_e) => {
+                error!("failed to spawn sidecar: {_e}");
                 if attempt < max_retries - 1 {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                 }
@@ -138,8 +143,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
                                 let pet_event = SidecarEvent { kind, data };
                                 let _ = handle_clone.emit("pet:event", &pet_event);
                             },
-                            Err(e) => {
-                                warn!("failed to parse sidecar event: {e}");
+                            Err(_e) => {
+                                warn!("failed to parse sidecar event: {_e}");
                             },
                         }
                     },
@@ -147,8 +152,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
                         let line_str = String::from_utf8_lossy(&line);
                         warn!("petcore stderr: {}", line_str.trim());
                     },
-                    Some(CommandEvent::Terminated(status)) => {
-                        info!("petcore sidecar terminated: {status:?}");
+                    Some(CommandEvent::Terminated(_status)) => {
+                        info!("petcore sidecar terminated: {_status:?}");
                         break;
                     },
                     None => {
@@ -168,8 +173,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
                 info!("petcore sidecar exited normally");
                 return;
             },
-            Err(e) => {
-                error!("petcore sidecar forward error: {e}");
+            Err(_e) => {
+                error!("petcore sidecar forward error: {_e}");
                 if attempt < max_retries - 1 {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                 }
