@@ -1,0 +1,27 @@
+# clippy 额外配置
+# 文档：https://doc.rust-lang.org/clippy/
+# 配合 Cargo.toml 中的 [lints.clippy] 使用
+
+# 认知复杂度上限
+cognitive-complexity = 20
+
+# 函数行数上限（含注释和空行）
+too-many-lines-threshold = 200
+
+# 函数参数上限
+too-many-arguments-threshold = 6
+
+# 结构体字段上限
+too-many-fields-threshold = 10
+
+# 禁止 unwrap
+allow-unwrap = false
+
+# 禁止 expect（除测试外）
+allow-expect = false
+
+# 禁止 println!（除 main.rs 外）
+allow-print = false
+
+# 类型复杂度上限
+type-complexity-threshold = 250

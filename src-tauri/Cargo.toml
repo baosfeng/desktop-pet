@@ -1,0 +1,35 @@
+[package]
+name = "desktop-pet"
+version = "0.1.0"
+edition = "2024"
+description = "Desktop AI Pet — Tauri v2 shell"
+
+[lints]
+clippy.pedantic = { level = "warn", priority = -1 }
+clippy.nursery = { level = "warn", priority = -1 }
+
+clippy.cargo_common_metadata = "warn"
+clippy.multiple_crate_versions = "warn"
+
+# 禁止项
+clippy.unwrap_used = "error"
+clippy.expect_used = "error"
+clippy.print_stdout = "error"
+clippy.panic = "error"
+clippy.exit = "error"
+clippy.todo = "error"
+clippy.dbg_macro = "error"
+
+# 代码质量
+clippy.large_futures = "warn"
+clippy.redundant_clone = "warn"
+clippy.needless_pass_by_value = "warn"
+clippy.trivially_copy_pass_by_ref = "warn"
+clippy.cast_lossless = "warn"
+clippy.cast_possible_truncation = "warn"
+clippy.cast_possible_wrap = "warn"
+clippy.cast_sign_loss = "warn"
+
+# 安全
+clippy.unchecked_duration_subtraction = "error"
+clippy.manual_strip = "warn"

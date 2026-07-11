@@ -1,0 +1,87 @@
+# golangci-lint 配置
+# 文档：https://golangci-lint.run/usage/configuration/
+# 安装：brew install golangci-lint
+
+version: "2"
+
+linters:
+  enable:
+    - govet          # Go 编译器检查（变量 shadowing、unsafe 指针等）
+    - staticcheck    # 静态分析（已过时的代码、错误处理、性能问题）
+    - gofumpt        # 比 gofmt 更严格的格式化（必须安装 gofumpt）
+    - errcheck       # 检查未处理的 error 返回值
+    - gosimple       # 简化代码
+    - unused         # 检查未使用的变量/函数/类型
+    - misspell       # 拼写检查
+    - revive         # Go 代码风格检查（替代 golint）
+    - gosec          # 安全漏洞检查
+    - cyclop         # 圈复杂度检查
+    - gci            # imports 分组排序
+    - forbidigo      # 禁止特定标识符（如 fmt.Print）
+  disable:
+    - deadcode       # Go 1.19+ 已内置 unused
+    - varcheck       # Go 1.19+ 已内置 unused
+    - structcheck    # Go 1.19+ 已内置 unused
+
+linters-settings:
+  gofumpt:
+    extra-rules: true  # 启用更严格的 gofumpt 规则
+  gci:
+    sections:
+      - standard   # 标准库
+      - default    # 第三方包
+      - prefix(github.com/user/desktop-pet/petcore)  # 内部包
+  cyclop:
+    max-complexity: 15
+    package-average: 10.0
+  forbidigo:
+    forbid:
+      - p: ^fmt\.Print.*$
+        msg: "使用日志库（如 log/slog）替代 fmt.Print"
+      - p: ^log\.Fatalf?$
+        msg: "使用 error 返回替代 log.Fatal"
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+      - name: package-comments
+        severity: warning
+      - name: indent-error-flow
+        severity: warning
+      - name: error-return
+        severity: error
+      - name: error-strings
+        severity: error
+      - name: receiver-naming
+        severity: warning
+      - name: increment-decrement
+        severity: warning
+      - name: error-naming
+        severity: error
+      - name: empty-block
+        severity: warning
+      - name: superfluous-else
+        severity: warning
+      - name: unused-parameter
+        severity: warning
+      - name: unreachable-code
+        severity: error
+      - name: redefines-builtin-id
+        severity: error
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - cyclop
+    - path: cmd/
+      linters:
+        - forbidigo  # main.go 中允许使用 fmt.Print
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+run:
+  timeout: 5m
+  tests: true

@@ -1,0 +1,32 @@
+# rustfmt 配置
+# 文档：https://rust-lang.github.io/rustfmt/
+
+max_width = 100                    # 最大行宽
+tab_spaces = 4                     # 缩进空格数
+newline_style = "Unix"             # 换行符
+use_small_heuristics = "Default"   # 启发式合并
+
+# 导入排序
+group_imports = "StdExternalCrate"  # std → 第三方 → 自身
+imports_granularity = "Crate"       # 每个 crate 一组
+
+# 花括号风格
+brace_style = "SameLineWhere"
+control_brace_style = "AlwaysSameLine"
+
+# 匹配对齐
+match_block_trailing_comma = true
+trailing_comma = "Vertical"
+
+# 链式调用换行
+chain_width = 80
+chain_one_line_max = 60
+
+# 格式化属性
+reorder_impl_items = true
+reorder_modules = true
+normalize_comments = true
+normalize_doc_attributes = true
+format_code_in_doc_comments = true
+wrap_comments = true
+comment_width = 100
