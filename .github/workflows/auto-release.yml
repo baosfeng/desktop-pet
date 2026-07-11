@@ -1,0 +1,295 @@
+# 自动发布工作流
+# 当 VERSION 文件在 main 分支上被修改时，自动触发打包、编译和发布
+# 流程：VERSION 变更 → 读取版本号 → 创建 tag → 构建产物 → GitHub Release
+---
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "VERSION"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "手动指定版本 (留空则从 VERSION 文件读取)"
+        required: false
+        type: string
+
+concurrency:
+  group: auto-release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  GO_VERSION: "1.23"
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9"
+
+jobs:
+  # ==========================================
+  # 检查版本号
+  # ==========================================
+  check-version:
+    name: Check Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      tag: ${{ steps.get-version.outputs.tag }}
+      exists: ${{ steps.check-tag.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: get-version
+        run: |
+          if [[ -n "${{ inputs.version }}" ]]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "tag=v${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            VERSION=$(cat VERSION | tr -d ' \t\n')
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check tag exists
+        id: check-tag
+        run: |
+          TAG="v$(cat VERSION | tr -d ' \t\n')"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Tag $TAG 已存在，跳过发布"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "✅ Tag $TAG 不存在，继续发布流程"
+          fi
+
+  # ==========================================
+  # 创建 Git Tag
+  # ==========================================
+  create-tag:
+    name: Create Tag
+    needs: [check-version]
+    if: needs.check-version.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.create.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create and push tag
+        id: create
+        run: |
+          TAG="${{ needs.check-version.outputs.tag }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  # ==========================================
+  # Changelog 生成
+  # ==========================================
+  changelog:
+    name: Generate Changelog
+    needs: [check-version, create-tag]
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          configuration: |
+            {
+              "template": "#{{CHANGELOG}}## v${{ needs.check-version.outputs.version }}\n\n${{UNCATEGORIZED}}",
+              "categories": [
+                {"title": "## ✨ 新功能", "labels": ["feat", "enhancement"]},
+                {"title": "## 🐛 Bug 修复", "labels": ["fix", "bug"]},
+                {"title": "## 📝 文档", "labels": ["docs"]},
+                {"title": "## ♻️ 重构", "labels": ["refactor"]},
+                {"title": "## 🔧 配置/CI", "labels": ["ci", "chore"]}
+              ],
+              "label_extractor": [
+                {"pattern": "^(feat|fix|docs|refactor|ci|chore)(\\(.+\\))?:.*", "target": "$1"}
+              ]
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ==========================================
+  # 构建 Go PetCore (跨平台)
+  # ==========================================
+  goreleaser:
+    name: Build PetCore
+    needs: [check-version, create-tag, changelog]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup goreleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: latest
+          distribution: goreleaser
+          args: build --snapshot --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload PetCore binaries
+        uses: actions/upload-artifact@v7
+        with:
+          name: petcore-binaries
+          path: petcore/dist/*
+          retention-days: 1
+
+  # ==========================================
+  # 构建前端 + Tauri 打包 (4 平台)
+  # ==========================================
+  tauri-build:
+    name: Build Tauri (${{ matrix.target }})
+    needs: [check-version, create-tag, changelog, goreleaser]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - os: macos-13
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: msi
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      # Linux 系统依赖
+      - if: runner.os == 'Linux'
+        name: Install Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      # 编译 Go PetCore (目标平台)
+      - name: Build PetCore for target
+        run: |
+          cd petcore
+          GOOS="${{ matrix.target == 'aarch64-apple-darwin' && 'darwin' || matrix.target == 'x86_64-apple-darwin' && 'darwin' || matrix.target == 'x86_64-pc-windows-msvc' && 'windows' || 'linux' }}"
+          GOARCH="${{ matrix.target == 'aarch64-apple-darwin' && 'arm64' || 'amd64' }}"
+          SIDECAR="${{ matrix.target == 'aarch64-apple-darwin' && 'petcore-aarch64-apple-darwin' || matrix.target == 'x86_64-apple-darwin' && 'petcore-x86_64-apple-darwin' || matrix.target == 'x86_64-pc-windows-msvc' && 'petcore-x86_64-pc-windows-msvc.exe' || 'petcore-x86_64-unknown-linux-gnu' }}"
+          CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH \
+            go build -ldflags="-s -w" \
+            -o "../src-tauri/binaries/$SIDECAR" \
+            ./cmd/petcore/
+
+      # 构建前端
+      - name: Install frontend deps
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          pnpm build
+
+      # 打包 Tauri
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2"
+
+      - name: Build Tauri app
+        run: cargo tauri build --bundles ${{ matrix.bundles }}
+        working-directory: src-tauri
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+
+      - name: Upload Tauri bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: DesktopPet-${{ matrix.target }}
+          path: src-tauri/target/release/bundle/**/*
+          retention-days: 1
+
+  # ==========================================
+  # 创建 GitHub Release
+  # ==========================================
+  release:
+    name: Create GitHub Release
+    needs: [check-version, create-tag, changelog, tauri-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-tag.outputs.tag }}
+          name: "v${{ needs.check-version.outputs.version }}"
+          body: ${{ needs.changelog.outputs.changelog }}
+          files: |
+            DesktopPet-aarch64-apple-darwin/**/*
+            DesktopPet-x86_64-apple-darwin/**/*
+            DesktopPet-x86_64-pc-windows-msvc/**/*
+            DesktopPet-x86_64-unknown-linux-gnu/**/*
+          draft: true
+          prerelease: false
+          generate_release_notes: false
