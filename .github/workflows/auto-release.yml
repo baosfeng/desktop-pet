@@ -1,14 +1,9 @@
-# 自动发布工作流
-# 当 VERSION 文件在 main 分支上被修改时，自动触发打包、编译和发布
-# 流程：VERSION 变更 → 读取版本号 → 创建 tag → 构建产物 → GitHub Release
+# 自动发布工作流（手动触发）
+# 手动触发后读取 VERSION 文件，创建 tag 并发布
 ---
 name: Auto Release
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "VERSION"
   workflow_dispatch:
     inputs:
       version:
