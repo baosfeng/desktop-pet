@@ -52,6 +52,7 @@ func (f *Flags) Register(name string, defaultValue bool) {
 
 // ─── 预定义 Flag 名称 ────────────────────────
 
+// 预定义的 Flag 名称常量。
 const (
 	FlagMemoryStage = "agent.memory_stage" // Phase 2: 注入记忆到上下文
 	FlagToolLoop    = "agent.tool_loop"    // Phase 4: 工具调用循环

@@ -39,21 +39,24 @@ func TestLoad_FileNotExist_ReturnsDefault(t *testing.T) {
 	}
 }
 
-func TestLoad_FileExists_ReturnsTODO(t *testing.T) {
+func TestLoad_FileExists_LoadsConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")
-	if err := os.WriteFile(path, []byte("[llm]\nprovider=\"openai\"\n"), 0644); err != nil {
+	if err := os.WriteFile(path, []byte("[llm]\nprovider=\"openai\"\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	_, err := Load(path)
-	if err == nil {
-		t.Error("expected error (TOML parsing not implemented)")
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load should parse valid TOML: %v", err)
+	}
+	if cfg.LLM.Provider != "openai" {
+		t.Errorf("LLM.Provider = %q, want %q", cfg.LLM.Provider, "openai")
 	}
 }
 
 func TestAPIKey_FromEnv(t *testing.T) {
-	t.Setenv("TEST_LLM_KEY", "sk-test123")
-	cfg := LLMConfig{APIKeyEnv: "TEST_LLM_KEY"}
+	t.Setenv("MY_VAR", "sk-test123")
+	cfg := LLMConfig{APIKeyEnv: "MY_VAR"}
 	if got := cfg.APIKey(); got != "sk-test123" {
 		t.Errorf("APIKey() = %q, want %q", got, "sk-test123")
 	}

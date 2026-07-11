@@ -9,15 +9,16 @@ import "time"
 // Type 表示事件类型的字符串标识。
 type Type string
 
+// 预定义事件类型常量。
 const (
-	EventStateChanged  Type = "state.changed"   // 状态机切换
-	EventPetSpeak      Type = "pet.speak"        // 宠物说话
-	EventPetAction     Type = "pet.action"       // 宠物动作
-	EventPetEmotion    Type = "pet.emotion"      // 情绪变化
-	EventAgentThinking Type = "agent.thinking"   // AI 思考中
-	EventAgentReply    Type = "agent.reply"      // AI 回复片段
-	EventMemoryUpdated Type = "memory.updated"   // 记忆更新
-	EventError         Type = "error"            // 错误
+	EventStateChanged  Type = "state.changed"  // 状态机切换
+	EventPetSpeak      Type = "pet.speak"      // 宠物说话
+	EventPetAction     Type = "pet.action"     // 宠物动作
+	EventPetEmotion    Type = "pet.emotion"    // 情绪变化
+	EventAgentThinking Type = "agent.thinking" // AI 思考中
+	EventAgentReply    Type = "agent.reply"    // AI 回复片段
+	EventMemoryUpdated Type = "memory.updated" // 记忆更新
+	EventError         Type = "error"          // 错误
 )
 
 // Event 是系统中传递的标准事件结构。
@@ -56,5 +57,8 @@ var _ Sink = (*NoopSink)(nil)
 // NoopSink 是一个空实现，用于测试或不需要处理事件的场景。
 type NoopSink struct{}
 
+// Send 实现 Sink 接口，空操作返回 nil。
 func (NoopSink) Send(Event) error { return nil }
-func (NoopSink) Close() error     { return nil }
+
+// Close 实现 Sink 接口，空操作返回 nil。
+func (NoopSink) Close() error { return nil }

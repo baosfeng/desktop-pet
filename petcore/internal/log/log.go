@@ -41,7 +41,7 @@ func InitLogger() {
 			})
 		default:
 			handler = slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-				Level:     level,
+				Level:       level,
 				ReplaceAttr: replaceAttr,
 			})
 		}
@@ -58,9 +58,16 @@ func L() *slog.Logger {
 
 // ─── 便捷函数 ──────────────────────────────
 
+// Debug 输出一条调试级别日志。
 func Debug(msg string, args ...any) { L().Debug(msg, args...) }
-func Info(msg string, args ...any)  { L().Info(msg, args...) }
-func Warn(msg string, args ...any)  { L().Warn(msg, args...) }
+
+// Info 输出一条信息级别日志。
+func Info(msg string, args ...any) { L().Info(msg, args...) }
+
+// Warn 输出一条警告级别日志。
+func Warn(msg string, args ...any) { L().Warn(msg, args...) }
+
+// Error 输出一条错误级别日志。
 func Error(msg string, args ...any) { L().Error(msg, args...) }
 
 // ─── 带上下文的日志 ─────────────────────────
@@ -97,7 +104,9 @@ func parseLevel(s string) slog.Level {
 	}
 }
 
-func replaceAttr(groups []string, a slog.Attr) slog.Attr {
+// replaceAttr 是 slog.HandlerOptions.ReplaceAttr 回调，
+// 用于移除默认时间戳属性。
+func replaceAttr(_ []string, a slog.Attr) slog.Attr {
 	// 时间戳格式化为易读格式
 	if a.Key == slog.TimeKey {
 		return slog.Attr{}

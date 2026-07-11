@@ -8,26 +8,28 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/BurntSushi/toml"
 )
 
 // Config 是 PetCore 的完整配置结构。
 type Config struct {
-	LLM          LLMConfig          `toml:"llm"`
-	Agent        AgentConfig        `toml:"agent"`
-	Window       WindowConfig       `toml:"window"`
-	Update       UpdateConfig       `toml:"update"`
-	Memory       MemoryConfig       `toml:"memory"`
-	Plugin       PluginConfig       `toml:"plugin"`
-	FeatureFlags map[string]bool    `toml:"feature_flags"`
+	LLM          LLMConfig       `toml:"llm"`
+	Agent        AgentConfig     `toml:"agent"`
+	Window       WindowConfig    `toml:"window"`
+	Update       UpdateConfig    `toml:"update"`
+	Memory       MemoryConfig    `toml:"memory"`
+	Plugin       PluginConfig    `toml:"plugin"`
+	FeatureFlags map[string]bool `toml:"feature_flags"`
 }
 
 // LLMConfig 是 LLM Provider 的配置。
 type LLMConfig struct {
-	Provider    string `toml:"provider"`     // openai / ollama / mock
-	Model       string `toml:"model"`
-	BaseURL     string `toml:"base_url"`
-	APIKeyEnv   string `toml:"api_key_env"`   // 从环境变量读取 API Key
-	MaxTokens   int    `toml:"max_tokens"`
+	Provider    string  `toml:"provider"` // openai / ollama / mock
+	Model       string  `toml:"model"`
+	BaseURL     string  `toml:"base_url"`
+	APIKeyEnv   string  `toml:"api_key_env"` // 从环境变量读取 API Key
+	MaxTokens   int     `toml:"max_tokens"`
 	Temperature float64 `toml:"temperature"`
 }
 
@@ -117,8 +119,12 @@ func Load(path string) (*Config, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return DefaultConfig(), nil
 	}
-	// TODO: 实现 TOML 解析（Phase 2 引入 gopkg.in/yaml 或 BurntSushi/toml）
-	return nil, fmt.Errorf("config: TOML parsing not yet implemented, path=%s", path)
+
+	cfg := DefaultConfig()
+	if _, err := toml.DecodeFile(path, cfg); err != nil {
+		return nil, fmt.Errorf("config: failed to parse %s: %w", path, err)
+	}
+	return cfg, nil
 }
 
 // APIKey 从环境变量读取 LLM API Key。

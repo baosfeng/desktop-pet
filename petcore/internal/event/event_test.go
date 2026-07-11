@@ -57,7 +57,7 @@ func TestNoopSink_Close_NoError(t *testing.T) {
 	}
 }
 
-func TestNoopSink_ConcurrentSafe(t *testing.T) {
+func TestNoopSink_ConcurrentSafe(_ *testing.T) {
 	// 验证 NoopSink 在并发下不会 panic
 	sink := NoopSink{}
 	var wg sync.WaitGroup
@@ -72,7 +72,7 @@ func TestNoopSink_ConcurrentSafe(t *testing.T) {
 	wg.Wait()
 }
 
-func TestSinkInterface_Implemented(t *testing.T) {
+func TestSinkInterface_Implemented(_ *testing.T) {
 	// 编译时验证：确保 NoopSink 实现了 Sink 接口
 	var _ Sink = NoopSink{}
 	_ = NoopSink{} // suppress unused
