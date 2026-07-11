@@ -116,7 +116,7 @@ make build
 
 | 文档 | 说明 |
 |------|------|
-| [设计规范](docs/superpowers/specs/2026-07-09-desktop-pet-design.md) | 完整设计文档 |
+| [架构总览](docs/概览/架构总览.md) | 完整架构设计说明 |
 | [架构总览](docs/概览/架构总览.md) | 系统架构概览 |
 | [快速上手](docs/概览/快速上手.md) | 开发环境搭建 |
 | [前端文档](docs/前端/索引.md) | React/PixiJS/Live2D |

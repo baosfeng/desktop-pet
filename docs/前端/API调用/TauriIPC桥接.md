@@ -2,77 +2,85 @@
 
 ## 职责
 
-封装前端与 Tauri Rust 壳之间的 IPC 通信层。替代旧架构中的 WebSocket 客户端，使用 `@tauri-apps/api` v2 提供的 invoke 和 event 机制。
+封装前端与 Tauri Rust 壳之间的 IPC 通信层。使用 `@tauri-apps/api` v2 提供的 `invoke` 和 `listen` 机制，替代旧架构中的 WebSocket 客户端。
 
 ## 核心文件
 
 | 文件路径 | 职责 |
 |---------|------|
-| `frontend/src/lib/bridge.ts` | Tauri IPC 封装（调用 Go 命令、监听事件） |
-| `frontend/src/hooks/usePetCore.ts` | React hook，封装 invoke 调用 |
-| `frontend/src/hooks/usePetEvents.ts` | React hook，封装事件监听 |
+| `frontend/src/lib/bridge.ts` | Tauri IPC 封装（调用命令 + 监听事件） |
 
 ## 前端调用后端命令
 
 ```typescript
 // bridge.ts
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { type UnlistenFn, listen } from '@tauri-apps/api/event';
 
-// 调用 Go PetCore 命令（通过 Tauri → sidecar）
-export async function chat(text: string): Promise<void> {
+// 发送聊天消息（通过 Tauri → sidecar → PetCore）
+export async function sendMessage(text: string): Promise<void> {
     await invoke('chat', { text });
 }
 
-export async function getStatus(): Promise<PetStatus> {
+// 切换鼠标穿透
+export async function toggleClickthrough(enabled: boolean): Promise<void> {
+    await invoke('toggle_clickthrough', { enabled });
+}
+
+// 获取窗口位置
+export async function getWindowPosition(): Promise<{ x: number; y: number }> {
+    return await invoke('get_window_position');
+}
+
+// 设置窗口位置
+export async function setWindowPosition(x: number, y: number): Promise<void> {
+    await invoke('set_window_position', { x, y });
+}
+
+// 获取宠物状态
+export async function getStatus(): Promise<Record<string, unknown>> {
     return await invoke('get_status');
-}
-
-export async function queryMemory(query: string): Promise<Memory[]> {
-    return await invoke('query_memory', { query });
-}
-
-// 监听 PetCore 事件（通过 Tauri → sidecar → event）
-export function onPetEvent(handler: (event: PetEvent) => void): () => void {
-    return listen('pet:event', (e) => {
-        handler(e.payload as PetEvent);
-    });
 }
 ```
 
 ## 事件流
 
 ```typescript
-// usePetEvents.ts — 组件中监听事件
-function usePetEvents() {
-    useEffect(() => {
-        const unlisten = onPetEvent((event) => {
-            switch (event.kind) {
-                case 'pet.speak':
-                    setBubbleText(event.data.text);
-                    break;
-                case 'pet.action':
-                    petRef.current?.playAnimation(event.data.action);
-                    break;
-                case 'pet.emotion':
-                    setEmotion(event.data.mood);
-                    break;
-                case 'agent.thinking':
-                    setIsThinking(event.data.status);
-                    break;
-            }
-        });
-        return unlisten;
-    }, []);
+// bridge.ts — 监听宠物事件
+export interface PetEvent {
+  kind: string;
+  data: Record<string, unknown>;
 }
+
+export function onPetEvent(handler: (event: PetEvent) => void): Promise<UnlistenFn> {
+  return listen<PetEvent>('pet:event', (e) => {
+    handler(e.payload);
+  });
+}
+
+// App.tsx — 使用示例
+useEffect(() => {
+  const unlistenPromise = onPetEvent((event: PetEvent) => {
+    if (event.kind === 'message' && typeof event.data.text === 'string') {
+      // 显示消息
+    }
+  });
+  return () => { void unlistenPromise.then((unlisten) => { unlisten(); }); };
+}, []);
 ```
 
-## 与旧 WebSocket 对比
+## 可用命令表
 
-| 对比项 | 旧 (WebSocket) | 新 (Tauri IPC) |
-|--------|---------------|----------------|
-| 通信方式 | WebSocket 127.0.0.1 | Tauri invoke + event |
-| 延迟 | 毫秒级（TCP） | 微秒级（进程内） |
-| 安全性 | 需处理端口冲突 | 零网络暴露 |
-| 代码量 | 需管理连接/重连 | invoke 自动处理 |
-| 状态管理 | 手动序列化/反序列化 | serde 自动处理 |
+| 命令 | 参数 | 返回 | 说明 |
+|------|------|------|------|
+| `chat` | `{ text: string }` | `void` | 发送对话消息 |
+| `toggle_clickthrough` | `{ enabled: boolean }` | `void` | 切换鼠标穿透 |
+| `get_window_position` | 无 | `{ x: number, y: number }` | 获取窗口位置 |
+| `set_window_position` | `{ x: number, y: number }` | `void` | 设置窗口位置 |
+| `get_status` | 无 | `Record<string, unknown>` | 获取宠物状态 |
+
+## 事件类型
+
+| 事件名 | 方向 | Payload | 说明 |
+|--------|------|---------|------|
+| `pet:event` | PetCore → 前端 | `PetEvent` | 宠物事件（说话/动作/状态变化/思考） |
