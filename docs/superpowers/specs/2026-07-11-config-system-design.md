@@ -78,3 +78,17 @@ cfg, err := config.Load("~/.desktop-pet/config.toml")
 // 读取 API Key（从环境变量）
 key := cfg.LLM.APIKey()
 ```
+
+---
+
+## 验收标准
+
+> 以下验收标准适用于所有子 Agent 和人工任务。缺少任何一项即不视为完成。
+
+- [ ] `go build ./...` 通过
+- [ ] `golangci-lint run ./...` 无 error
+- [ ] `go test -race ./...` 全部通过
+- [ ] 新增代码覆盖率 ≥60%（增量覆盖率）
+- [ ] 边界情况已覆盖（空输入 / 错误输入 / 并发场景）
+- [ ] 测试使用 Mock 而非真实外部服务（LLM / 网络 / 文件系统）
+- [ ] 编译时接口合规性检查：`var _ Interface = (*Impl)(nil)`
