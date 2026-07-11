@@ -80,6 +80,13 @@ type MockTool struct {
 	MockExecute     func(ctx context.Context, args string) (string, error)
 }
 
-func (m *MockTool) Name() string                             { return m.MockName }
-func (m *MockTool) Description() string                      { return m.MockDescription }
-func (m *MockTool) Execute(ctx context.Context, args string) (string, error) { return m.MockExecute(ctx, args) }
+// Name 返回工具名称。
+func (m *MockTool) Name() string { return m.MockName }
+
+// Description 返回工具描述。
+func (m *MockTool) Description() string { return m.MockDescription }
+
+// Execute 执行工具调用。
+func (m *MockTool) Execute(ctx context.Context, args string) (string, error) {
+	return m.MockExecute(ctx, args)
+}

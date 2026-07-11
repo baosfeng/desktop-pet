@@ -13,6 +13,7 @@ import (
 // Type 表示插件类型。
 type Type int
 
+// 预定义的插件类型常量。
 const (
 	TypeL1YAML Type = iota // 声明式 YAML 动作包
 	TypeL2JS               // JS 脚本引擎
@@ -53,7 +54,7 @@ type Registry interface {
 var _ Registry = (*builtinRegistry)(nil)
 
 type builtinRegistry struct {
-	mu   sync.RWMutex
+	mu      sync.RWMutex
 	plugins map[string]Plugin
 }
 
@@ -127,14 +128,21 @@ type MockPlugin struct {
 	OnStop   func() error
 }
 
-func (m *MockPlugin) Name() string                     { return m.MockName }
-func (m *MockPlugin) Type() Type                       { return m.MockType }
+// Name 返回插件名称。
+func (m *MockPlugin) Name() string { return m.MockName }
+
+// Type 返回插件类型。
+func (m *MockPlugin) Type() Type { return m.MockType }
+
+// Start 启动插件。
 func (m *MockPlugin) Start(ctx context.Context) error {
 	if m.OnStart != nil {
 		return m.OnStart(ctx)
 	}
 	return nil
 }
+
+// Stop 停止插件。
 func (m *MockPlugin) Stop() error {
 	if m.OnStop != nil {
 		return m.OnStop()

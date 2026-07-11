@@ -109,6 +109,6 @@ func TestRegistry_StartAll_StopAll(t *testing.T) {
 	}
 }
 
-func TestRegistryInterface(t *testing.T) {
+func TestRegistryInterface(_ *testing.T) {
 	var _ Registry = (*builtinRegistry)(nil)
 }
