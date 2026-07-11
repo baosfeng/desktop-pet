@@ -1,6 +1,7 @@
 # Go PetCore
 petcore/petcore
 petcore/petcore.exe
+petcore/dist/           # goreleaser 输出
 *.exe
 
 # Rust / Tauri

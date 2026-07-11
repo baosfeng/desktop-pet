@@ -70,7 +70,27 @@ desktop-pet/
 │   ├── 后端/
 │   ├── 开发指南/
 │   └── 概览/
-└── AGENTS.md
+├── .github/                # GitHub 社区 + CI 配置
+│   ├── CODE_OF_CONDUCT.md  # 贡献者公约
+│   ├── CONTRIBUTING.md     # 贡献指南
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   ├── ISSUE_TEMPLATE/     # Bug / Feature 模板
+│   ├── dependabot.yml      # 自动依赖更新
+│   └── workflows/
+│       └── ci.yml          # Lint → Test → Build 流水线
+│       ├── codeql.yml       # CodeQL 安全分析
+│       └── release.yml      # 发布流水线（4 平台矩阵）
+├── .devcontainer/           # 容器化开发环境
+│   ├── devcontainer.json
+│   ├── setup.sh
+│   └── post-create.sh
+├── scripts/               # 构建/开发脚本
+│   ├── dev.sh             # 开发环境一键启动
+│   └── build.sh           # 生产构建（Go + 前端 + Tauri）
+├── Makefile               # 统一开发命令入口
+├── CHANGELOG.md            # 版本变更日志
+├── lefthook.yml           # Pre-commit 钩子（lint + secret 扫描）
+├── AGENTS.md
 ```
 
 ## 📂 文档索引
@@ -88,6 +108,18 @@ desktop-pet/
 | 提交代码到 Git | → **[提交规范](docs/开发指南/提交规范.md)** |
 | 搭建开发环境 | → **[快速上手](docs/概览/快速上手.md)** |
 | 排查已知问题 | → **[踩坑记录](docs/踩坑/)** |
+| 了解代码规范/Lint 规则 | → **[代码规范](docs/开发指南/代码规范.md)** |
+| 了解贡献方式 | → `.github/CONTRIBUTING.md` |
+| 提交 Bug/Feature | → `.github/ISSUE_TEMPLATE/` |
+| 使用开发/构建脚本 | → `scripts/dev.sh` / `scripts/build.sh` |
+| 使用 Makefile 命令 | → `make help`（`make dev` / `make test` / `make lint`）|
+| 配置 Pre-commit 钩子 | → `lefthook.yml`（`brew install lefthook && lefthook install`） |
+
+> ⚠️ **语法最新性规则：每次代码改动后，必须保证对应语言的 linter 通过**
+> - Go: `cd petcore && golangci-lint run ./...`
+> - Rust: `cd src-tauri && cargo clippy -- -D warnings && cargo fmt --check`
+> - TypeScript: `cd frontend && pnpm lint && pnpm format:check`
+> - 这些检查已配置在 CI（`.github/workflows/ci.yml`）和 pre-commit（`lefthook.yml`）中自动执行
 
 ## 功能模块
 
