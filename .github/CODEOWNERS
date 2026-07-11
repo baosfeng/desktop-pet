@@ -1,0 +1,26 @@
+# CODEOWNERS — 自动 PR 审批分配
+# 文档：https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# 全局默认
+* @desktop-pet/maintainers
+
+# Tauri 壳 (Rust)
+/src-tauri/ @desktop-pet/tauri-maintainers
+
+# Go PetCore
+/petcore/ @desktop-pet/petcore-maintainers
+
+# 前端 (React/PixiJS)
+/frontend/ @desktop-pet/frontend-maintainers
+
+# 文档
+/docs/ @desktop-pet/docs-maintainers
+
+# CI/CD 配置
+/.github/ @desktop-pet/ci-maintainers
+/Makefile @desktop-pet/ci-maintainers
+/lefthook.yml @desktop-pet/ci-maintainers
+
+# 根级配置文件
+/AGENTS.md @desktop-pet/maintainers
+/README.md @desktop-pet/docs-maintainers
