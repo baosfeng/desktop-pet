@@ -40,5 +40,8 @@
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-jsx-a11y": "^6.10.0",
     "eslint-plugin-import": "^2.32.0"
+  },
+  "overrides": {
+    "gh-pages": "5.0.0"
   }
 }

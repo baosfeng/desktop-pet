@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type React from "react";
 
 import ReactMarkdown from "react-markdown";
 
@@ -16,7 +17,7 @@ export interface Message {
 
 const TYPEWRITER_SPEED_MS = 30;
 
-export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): JSX.Element {
+export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.JSX.Element {
   const [inputText, setInputText] = useState("");
   const [typingIndex, setTypingIndex] = useState<number | null>(null);
   const [visibleChars, setVisibleChars] = useState(0);

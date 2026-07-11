@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type React from "react";
 
 import { ChatBubble } from "@/components/ChatBubble";
 import { SettingsPanel } from "@/components/SettingsPanel";
@@ -21,7 +22,7 @@ function generateId(): string {
   return `msg-${String(nextId)}-${String(Date.now())}`;
 }
 
-export default function App(): JSX.Element {
+export default function App(): React.JSX.Element {
   const [messages, setMessages] = useState<Message[]>([]);
   const [petState, setPetState] = useState<string>("idle");
   const [showSettings, setShowSettings] = useState(false);

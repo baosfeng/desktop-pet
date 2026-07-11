@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import type React from "react";
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -39,7 +40,7 @@ function saveSettings(settings: Settings): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
-export function SettingsPanel({ onClose }: SettingsPanelProps): JSX.Element {
+export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Element {
   const [settings, setSettings] = useState<Settings>(loadSettings);
 
   const handleChange = useCallback((field: keyof Settings, value: string | number) => {
