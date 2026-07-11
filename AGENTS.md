@@ -109,6 +109,7 @@ desktop-pet/
 | 搭建开发环境 | → **[快速上手](docs/概览/快速上手.md)** |
 | 排查已知问题 | → **[踩坑记录](docs/踩坑/)** |
 | 了解代码规范/Lint 规则 | → **[代码规范](docs/开发指南/代码规范.md)** |
+| 了解 Phase 路线图 + 代码质量基线 | → **[设计规范 §7](docs/superpowers/specs/2026-07-09-desktop-pet-design.md)** |
 | 了解贡献方式 | → `.github/CONTRIBUTING.md` |
 | 提交 Bug/Feature | → `.github/ISSUE_TEMPLATE/` |
 | 使用开发/构建脚本 | → `scripts/dev.sh` / `scripts/build.sh` |
@@ -120,6 +121,11 @@ desktop-pet/
 > - Rust: `cd src-tauri && cargo clippy -- -D warnings && cargo fmt --check`
 > - TypeScript: `cd frontend && pnpm lint && pnpm format:check`
 > - 这些检查已配置在 CI（`.github/workflows/ci.yml`）和 pre-commit（`lefthook.yml`）中自动执行
+>
+> ⚠️ **代码质量基线（详见[设计规范 §7](docs/superpowers/specs/2026-07-09-desktop-pet-design.md)）**
+> - **Phase 1**: Sentry 错误追踪、FSM 模糊测试、覆盖率 ≥60%
+> - **Phase 2**: e2e 测试、基准回归检查、性能预算（体积/内存）
+> - **Phase 3+**: i18n 国际化（react-intl）、a11y 无障碍（jsx-a11y）
 
 ## 功能模块
 
