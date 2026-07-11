@@ -22,9 +22,9 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.26"
   NODE_VERSION: "22"
-  PNPM_VERSION: "9"
+  PNPM_VERSION: "11"
 
 jobs:
   # ==========================================
