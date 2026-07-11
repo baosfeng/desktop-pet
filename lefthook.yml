@@ -1,0 +1,78 @@
+# lefthook 配置 — Git hooks 管理
+# 文档：https://github.com/evilmartians/lefthook
+# 安装：brew install lefthook
+# 激活：lefthook install
+
+# 跳过钩子：git commit --no-verify 或 SKIP=golangci-lint git commit
+
+pre-commit:
+  parallel: true
+  commands:
+    # ----- Go -----
+    golangci-lint:
+      root: "petcore/"
+      glob: "*.go"
+      run: golangci-lint run --timeout 3m {staged_files}
+      stage_fixed: true
+
+    go-vet:
+      root: "petcore/"
+      glob: "*.go"
+      run: go vet ./...
+      stage_fixed: false
+
+    # ----- Rust -----
+    rust-fmt:
+      root: "src-tauri/"
+      glob: "*.rs"
+      run: cargo fmt --check
+      stage_fixed: false
+
+    clippy:
+      root: "src-tauri/"
+      glob: "*.rs"
+      run: cargo clippy -- -D warnings
+      stage_fixed: false
+
+    # ----- TypeScript -----
+    eslint:
+      root: "frontend/"
+      glob: "*.{ts,tsx}"
+      run: pnpm lint
+      stage_fixed: false
+
+    prettier:
+      root: "frontend/"
+      glob: "*.{ts,tsx,json,css,md}"
+      run: pnpm format:check
+      stage_fixed: false
+
+    # ----- 通用 -----
+    check-merge-conflict:
+      glob: "*"
+      run: |-
+        test "$(grep -cE '^<<<<<<< |^=======$|^>>>>>>> ' {staged_files})" -eq 0
+      description: "检查未解决的合并冲突"
+
+    secret-scan:
+      glob: "*"
+      run: |-
+        grep -nP '(?:sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36,}|api[-_]?key["\s:=]+["\']?[a-zA-Z0-9]{16,})' {staged_files} && exit 1 || true
+      description: "扫描密钥泄露"
+
+commit-msg:
+  commands:
+    commit-lint:
+      run: |-
+        echo "检查提交信息格式（中文描述，首字非小写字母）："
+        head -1 "{1}" | grep -P '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+' || true
+      description: "检查 conventional commit 格式"
+
+# post-commit 钩子：提交后自动运行相关测试
+post-commit:
+  commands:
+    go-test-changed:
+      root: "petcore/"
+      glob: "*.go"
+      run: go test ./...
+      fail_text: "⚠️  Go 测试失败，请修复！"
