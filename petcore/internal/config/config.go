@@ -12,12 +12,13 @@ import (
 
 // Config 是 PetCore 的完整配置结构。
 type Config struct {
-	LLM    LLMConfig    `toml:"llm"`
-	Agent  AgentConfig  `toml:"agent"`
-	Window WindowConfig `toml:"window"`
-	Update UpdateConfig `toml:"update"`
-	Memory MemoryConfig `toml:"memory"`
-	Plugin PluginConfig `toml:"plugin"`
+	LLM          LLMConfig          `toml:"llm"`
+	Agent        AgentConfig        `toml:"agent"`
+	Window       WindowConfig       `toml:"window"`
+	Update       UpdateConfig       `toml:"update"`
+	Memory       MemoryConfig       `toml:"memory"`
+	Plugin       PluginConfig       `toml:"plugin"`
+	FeatureFlags map[string]bool    `toml:"feature_flags"`
 }
 
 // LLMConfig 是 LLM Provider 的配置。
@@ -99,6 +100,13 @@ func DefaultConfig() *Config {
 		Plugin: PluginConfig{
 			ActionsDir: filepath.Join(dataDir(), "actions"),
 			ScriptsDir: filepath.Join(dataDir(), "scripts"),
+		},
+		FeatureFlags: map[string]bool{
+			"agent.memory_stage": false,
+			"agent.tool_loop":    false,
+			"plugin.l1_yaml":     false,
+			"plugin.l2_js":       false,
+			"plugin.l3_mcp":      false,
 		},
 	}
 }
