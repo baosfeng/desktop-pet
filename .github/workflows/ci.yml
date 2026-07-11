@@ -44,9 +44,6 @@ jobs:
             lint-cmd: pnpm lint
     name: Lint (${{ matrix.lang.name }})
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ matrix.lang.dir }}
     steps:
       - uses: actions/checkout@v4
 
@@ -96,6 +93,7 @@ jobs:
       - name: Install frontend deps
         if: matrix.lang.name == 'Frontend'
         run: pnpm install --frozen-lockfile
+        working-directory: frontend
 
       - name: Run linter
         run: cd ${{ matrix.lang.dir }} && ${{ matrix.lang.lint-cmd }}
@@ -103,6 +101,7 @@ jobs:
       - name: Run cargo-audit
         if: matrix.lang.name == 'Rust'
         run: cargo audit
+        working-directory: ${{ matrix.lang.dir }}
 
   # ==========================================
   # Test: 三个语言并行运行
@@ -123,9 +122,6 @@ jobs:
             test-cmd: pnpm test -- --run
     name: Test (${{ matrix.lang.name }})
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ matrix.lang.dir }}
     steps:
       - uses: actions/checkout@v4
 
@@ -180,9 +176,11 @@ jobs:
       - name: Install frontend deps
         if: matrix.lang.name == 'Frontend'
         run: pnpm install --frozen-lockfile
+        working-directory: frontend
 
       - name: Run tests
         run: cd ${{ matrix.lang.dir }} && ${{ matrix.lang.test-cmd }}
+        working-directory: .
 
   # ==========================================
   # Coverage: 覆盖率门禁
