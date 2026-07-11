@@ -109,7 +109,7 @@ desktop-pet/
 
 | 当你需要... | 必须先阅读 |
 |------------|-----------|
-| 了解项目整体设计 | → **[设计规范](docs/superpowers/specs/2026-07-09-desktop-pet-design.md)** |
+| 了解项目整体设计 | → 参考 `docs/superpowers/specs/`（临时设计文档目录） |
 | 修改前端代码（React/PixiJS/Live2D） | → **[前端文档索引](docs/前端/索引.md)** |
 | 修改 Tauri 壳代码（Rust） | → **[前端文档索引](docs/前端/索引.md)** |
 | 修改 PetCore 内核代码（Go） | → **[后端文档索引](docs/后端/索引.md)** |
@@ -173,7 +173,7 @@ desktop-pet/
 
 ## 关键文档链接
 
-- → [设计规范](docs/superpowers/specs/2026-07-09-desktop-pet-design.md)
+- → [设计规范](docs/superpowers/specs/) — 临时目录，子 agent 使用
 - → [前端文档索引](docs/前端/索引.md)
 - → [后端文档索引](docs/后端/索引.md)
 - → [架构规划方案](docs/参考/架构规划方案.md)
