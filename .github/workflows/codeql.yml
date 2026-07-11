@@ -31,7 +31,7 @@ jobs:
           - language: javascript-typescript
             build-mode: none
           - language: rust
-            build-mode: manual
+            build-mode: none
 
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +59,7 @@ jobs:
         with:
           node-version: "22"
 
-      # Rust: 指定源码目录以便 CodeQL 正确分析
+      # Rust: 无需编译，纯语法分析（build-mode: none）
       - if: matrix.language == 'rust'
         name: Initialize CodeQL (Rust)
         uses: github/codeql-action/init@v4
@@ -67,25 +67,10 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-and-quality
-          source-root: src-tauri
 
-      - if: matrix.language != 'rust'
-        name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-          queries: security-and-quality
-
-      - if: matrix.build-mode == 'autobuild' && matrix.language != 'rust'
+      - if: matrix.build-mode == 'autobuild'
         name: Autobuild
         uses: github/codeql-action/autobuild@v4
-
-      # Rust: 手动构建（从 src-tauri 子目录）
-      - if: matrix.language == 'rust'
-        name: Build Rust
-        working-directory: src-tauri
-        run: cargo build --release
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
