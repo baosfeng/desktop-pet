@@ -118,3 +118,11 @@ func (e *Engine) GetStatus() map[string]any {
 		"tools":   len(e.tool.List()),
 	}
 }
+
+// SetSink 设置引擎的事件消费者，用于 sidecar 模式下替换默认 sink。
+func (e *Engine) SetSink(sink event.Sink) {
+	if sink == nil {
+		return
+	}
+	e.sink = sink
+}

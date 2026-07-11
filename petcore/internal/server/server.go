@@ -20,18 +20,18 @@ import (
 
 // Command 是父进程发给 PetCore 的命令。
 type Command struct {
-	Type   string          `json:"type"`            // "cmd"
-	ID     string          `json:"id"`              // 请求 ID
+	Type   string          `json:"type"`             // "cmd"
+	ID     string          `json:"id"`               // 请求 ID
 	Method string          `json:"method"`           // chat / get_status / ping
 	Params json.RawMessage `json:"params,omitempty"` // 参数
 }
 
 // Response 是 PetCore 返回给父进程的响应。
 type Response struct {
-	Type   string `json:"type"`            // "resp"
-	ID     string `json:"id"`              // 对应 Command.ID
+	Type   string `json:"type"`             // "resp"
+	ID     string `json:"id"`               // 对应 Command.ID
 	Result any    `json:"result,omitempty"` // 成功结果
-	Error  string `json:"error,omitempty"` // 错误信息
+	Error  string `json:"error,omitempty"`  // 错误信息
 }
 
 // WireEvent 是 PetCore 主动推送给父进程的事件。
@@ -149,10 +149,12 @@ type SinkAdapter struct {
 	server *Server
 }
 
+// NewSinkAdapter 创建一个 Sink 适配器，将事件通过 Server 的 writeJSON 发送给父进程。
 func NewSinkAdapter(s *Server) *SinkAdapter {
 	return &SinkAdapter{server: s}
 }
 
+// Send 将事件转换为 WireEvent 并通过 Server 写入 stdout。
 func (a *SinkAdapter) Send(e event.Event) error {
 	we := WireEvent{
 		Type:  "event",
@@ -163,4 +165,5 @@ func (a *SinkAdapter) Send(e event.Event) error {
 	return nil
 }
 
+// Close 实现 Sink 接口的空操作关闭方法。
 func (a *SinkAdapter) Close() error { return nil }

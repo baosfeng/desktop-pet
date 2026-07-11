@@ -8,7 +8,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -109,17 +108,18 @@ func buildEngine(cfg *config.Config) *core.Engine {
 func runSidecar(ctx context.Context, eng *core.Engine) {
 	srv := server.New(eng, os.Stdin, os.Stdout)
 
-	// 用 SinkAdapter 将事件输出到 stdout
-	// 需要在 engine 的 agent 上设置 sink
-	// TODO: Phase 2 — 通过 engine 接口统一设置 sink
+	// 创建 SinkAdapter 并注入到 engine
+	sinkAdapter := server.NewSinkAdapter(srv)
+	eng.SetSink(sinkAdapter)
+
 	log.Info("sidecar mode ready")
 	if err := srv.Run(ctx); err != nil {
 		log.Error("sidecar error", "error", err)
 	}
 }
 
-func runCLI(ctx context.Context, eng *core.Engine) {
-	fmt.Println("PetCore CLI mode (not yet implemented)")
-	fmt.Println("Run with --cli to enter interactive mode")
+func runCLI(ctx context.Context, _ *core.Engine) {
+	log.Info("PetCore CLI mode (not yet implemented)")
+	log.Info("Run with --cli to enter interactive mode")
 	<-ctx.Done()
 }

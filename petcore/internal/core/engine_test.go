@@ -106,10 +106,12 @@ func newTestEngine(t *testing.T, withPlugin bool) *Engine {
 
 	pluginReg := plugin.NewRegistry()
 	if withPlugin {
-		pluginReg.Register(&plugin.MockPlugin{
+		if err := pluginReg.Register(&plugin.MockPlugin{
 			MockName: "test-plugin",
 			MockType: plugin.TypeL1YAML,
-		})
+		}); err != nil {
+			t.Fatalf("failed to register plugin: %v", err)
+		}
 	}
 
 	cfg := config.DefaultConfig()
