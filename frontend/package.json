@@ -36,6 +36,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-config-prettier": "^10.0.0",
     "prettier": "^3.4.0",
-    "@trivago/prettier-plugin-sort-imports": "^5.0.0"
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2"
   }
 }
