@@ -170,6 +170,25 @@ func (e *Engine) SetSink(sink event.Sink) {
 	e.agent.SetSink(sink)
 }
 
+// VerifyAPIKey 验证 API Key 是否有效。
+// 创建一个临时的 LLM Provider 并发送一个测试请求。
+func (e *Engine) VerifyAPIKey(providerName, apiKey, baseURL, model string) error {
+	cfgMap := map[string]any{
+		"api_key":  apiKey,
+		"base_url": baseURL,
+		"model":    model,
+	}
+	p, err := llm.NewProvider(providerName, cfgMap)
+	if err != nil {
+		return fmt.Errorf("verify: cannot create provider: %w", err)
+	}
+	_, err = p.Chat(context.Background(), llm.Request{
+		Messages:  []llm.Message{{Role: "user", Content: "ping"}},
+		MaxTokens: 1,
+	})
+	return err
+}
+
 // UpdateLLMConfig 热更新 LLM Provider 配置（Provider / API Key / Base URL / Model / System Prompt）。
 // 由 update_config 命令触发，用户从设置面板保存时调用。
 func (e *Engine) UpdateLLMConfig(provider, apiKey, baseURL, model, systemPrompt string) error {
