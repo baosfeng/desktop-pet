@@ -25,11 +25,10 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(() => Promise.resolve(vi.fn())),
 }));
 
-import { usePetStore } from "../stores/petStore";
+/* eslint-disable import/first */
+import { generateId, usePetStore } from "../stores/petStore";
 import { sendMessage } from "../lib/bridge";
-
-// Re-export useChat's internals for testing without React rendering
-import { generateId } from "../stores/petStore";
+/* eslint-enable import/first */
 
 beforeEach(() => {
   usePetStore.setState({

@@ -9,6 +9,7 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(() => Promise.resolve(vi.fn())),
 }));
 
+/* eslint-disable import/first */
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
@@ -21,6 +22,7 @@ import {
   setWindowPosition,
   toggleClickthrough,
 } from "../lib/bridge";
+/* eslint-enable import/first */
 
 describe("bridge", () => {
   beforeEach(() => {

@@ -18,7 +18,7 @@ export function usePetEvent(): void {
 
       // 处理消息事件
       if (event.kind === "agent.reply" && typeof event.data.text === "string") {
-        if ((event.data as Record<string, unknown>).done === true) {
+        if (event.data.done === true) {
           return;
         }
         appendToLastAssistant(event.data.text);

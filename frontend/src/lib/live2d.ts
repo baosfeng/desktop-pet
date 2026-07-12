@@ -16,6 +16,8 @@
 
 import { Application } from "pixi.js";
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-confusing-void-expression, no-console -- pixi-live2d-display 缺少 TS 类型 */
+
 // pixi-live2d-display 的 TS 类型支持可能不完整，使用动态导入
 let Live2DModel: any;
 let CubismFramework: any;
@@ -125,7 +127,7 @@ export async function setModelExpression(
 export async function setModelMotion(
   app: Application,
   motionGroup: string,
-  motionIndex: number = 0,
+  motionIndex = 0,
 ): Promise<void> {
   const model = (app as any).__live2dModel;
   if (!model?.internalModel) return;

@@ -118,7 +118,7 @@ describe("petStore", () => {
     it("persists settings to localStorage", () => {
       usePetStore.getState().updateSettings({ opacity: 0.5 });
       usePetStore.getState().saveSettings();
-      const saved = JSON.parse(localStorage.getItem("desktop-pet-settings") ?? "{}");
+      const saved = JSON.parse(localStorage.getItem("desktop-pet-settings") ?? "{}") as Record<string, unknown>;
       expect(saved.opacity).toBe(0.5);
     });
 

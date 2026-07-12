@@ -72,32 +72,36 @@ function loadSettingsFromStorage(): Settings {
 export const usePetStore = create<PetStore>((set, get) => ({
   // Pet state
   petState: "idle",
-  setPetState: (state) => set({ petState: state }),
+  setPetState: (state) => { set({ petState: state }); },
 
   // Messages
   messages: [],
-  addMessage: (msg) =>
-    set((state) => ({ messages: [...state.messages, msg] })),
+  addMessage: (msg) => {
+    set((state) => ({ messages: [...state.messages, msg] }));
+  },
 
-  appendToLastAssistant: (text) =>
+  appendToLastAssistant: (text) => {
     set((state) => {
       const msgs = [...state.messages];
       for (let i = msgs.length - 1; i >= 0; i--) {
-        if (msgs[i]?.role === "assistant") {
-          msgs[i] = { ...msgs[i], content: msgs[i].content + text };
+        const m = msgs[i];
+        if (m?.role === "assistant") {
+          msgs[i] = { ...m, content: m.content + text };
           break;
         }
       }
       return { messages: msgs };
-    }),
+    });
+  },
 
-  clearMessages: () => set({ messages: [] }),
+  clearMessages: () => { set({ messages: [] }); },
 
   // Settings
   settings: loadSettingsFromStorage(),
-  updateSettings: (partial) =>
-    set((state) => ({ settings: { ...state.settings, ...partial } })),
-  loadSettings: () => set({ settings: loadSettingsFromStorage() }),
+  updateSettings: (partial) => {
+    set((state) => ({ settings: { ...state.settings, ...partial } }));
+  },
+  loadSettings: () => { set({ settings: loadSettingsFromStorage() }); },
   saveSettings: () => {
     const { settings } = get();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -105,5 +109,5 @@ export const usePetStore = create<PetStore>((set, get) => ({
 
   // Settings panel
   showSettings: false,
-  toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
+  toggleSettings: () => { set((state) => ({ showSettings: !state.showSettings })); },
 }));
