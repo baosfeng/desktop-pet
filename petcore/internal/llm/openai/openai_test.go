@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/desktop-pet/petcore/internal/llm"
@@ -45,11 +46,9 @@ func TestProvider_Model(t *testing.T) {
 
 func TestChat_NonStreaming(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		// Verify auth header
 		if r.Header.Get("Authorization") != "Bearer test-key" {
 			t.Error("missing auth header")
 		}
-
 		resp := chatResponse{
 			Choices: []choice{
 				{
@@ -89,7 +88,6 @@ func TestStream_ReturnsTextChunks(t *testing.T) {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.WriteHeader(http.StatusOK)
 
-		// SSE format
 		w.Write([]byte("data: "))
 		json.NewEncoder(w).Encode(chatResponse{
 			Choices: []choice{{Delta: delta{Content: "Hel"}, FinishReason: ""}},
@@ -166,5 +164,132 @@ func TestInit_MissingAPIKey(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error when API key is missing")
+	}
+}
+
+func TestStream_HTTPErrorResponse(t *testing.T) {
+	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(chatResponse{
+			Error: &apiError{Message: "Invalid API key"},
+		})
+	})
+	defer srv.Close()
+
+	ch, err := p.Stream(context.Background(), llm.Request{
+		Messages: []llm.Message{{Role: "user", Content: "hi"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotError := false
+	for chunk := range ch {
+		if chunk.Type == llm.ChunkError {
+			gotError = true
+			break
+		}
+	}
+	if !gotError {
+		t.Error("expected error chunk from unauthorized stream")
+	}
+}
+
+func TestStream_ToolCallsFinish(t *testing.T) {
+	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.WriteHeader(http.StatusOK)
+
+		w.Write([]byte("data: "))
+		json.NewEncoder(w).Encode(chatResponse{
+			Choices: []choice{{
+				Delta: delta{
+					Content: "",
+					ToolCalls: []toolCall{{
+						ID:   "call_123",
+						Type: "function",
+						Function: toolCallFunc{
+							Name:      "remember",
+							Arguments: `{"key":"test","value":"val"}`,
+						},
+					}},
+				},
+				FinishReason: "",
+			}},
+		})
+		w.Write([]byte("\n\ndata: "))
+		json.NewEncoder(w).Encode(chatResponse{
+			Choices: []choice{{Delta: delta{}, FinishReason: "tool_calls"}},
+		})
+		w.Write([]byte("\n\ndata: [DONE]\n\n"))
+	})
+	defer srv.Close()
+
+	ch, err := p.Stream(context.Background(), llm.Request{
+		Messages: []llm.Message{{Role: "user", Content: "call tool"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	foundToolCall := false
+	for chunk := range ch {
+		if chunk.Type == llm.ChunkToolCall && chunk.ToolCall != nil {
+			foundToolCall = true
+			if chunk.ToolCall.Tool != "remember" {
+				t.Errorf("ToolCall.Tool = %q, want %q", chunk.ToolCall.Tool, "remember")
+			}
+		}
+	}
+	if !foundToolCall {
+		t.Error("expected tool call chunk")
+	}
+}
+
+func TestExtractToolCallID(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"toolcall:abc123", "abc123"},
+		{"hello", "tool_5"},
+		{"toolcall:", ""},
+		{"", "tool_0"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.input, func(t *testing.T) {
+			got := extractToolCallID(tc.input)
+			if !strings.HasPrefix(got, "tool_") && got != tc.want {
+				t.Errorf("extractToolCallID(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+			if strings.HasPrefix(tc.input, "toolcall:") && got != tc.want {
+				t.Errorf("extractToolCallID(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestChat_NoChoices(t *testing.T) {
+	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(chatResponse{Choices: []choice{}})
+	})
+	defer srv.Close()
+
+	_, err := p.Chat(context.Background(), llm.Request{
+		Messages: []llm.Message{{Role: "user", Content: "hi"}},
+	})
+	if err == nil {
+		t.Fatal("expected error for empty choices")
+	}
+}
+
+func TestProvider_httpClientLazy(t *testing.T) {
+	p := &Provider{}
+	c1 := p.httpClient()
+	c2 := p.httpClient()
+	if c1 != c2 {
+		t.Error("httpClient should return cached instance")
 	}
 }

@@ -130,3 +130,80 @@ func TestInit_WithFactory(t *testing.T) {
 		t.Errorf("Model = %q, want %q", provider.Model(), "llama3.1:8b")
 	}
 }
+
+func TestStream_HTTPError(t *testing.T) {
+	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ollamaChatResponse{
+			Error: "server error",
+		})
+	})
+	defer srv.Close()
+
+	ch, err := p.Stream(context.Background(), llm.Request{
+		Messages: []llm.Message{{Role: "user", Content: "hi"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotError := false
+	for chunk := range ch {
+		if chunk.Type == llm.ChunkError {
+			gotError = true
+			_ = chunk.Error.Error() // ensure Error() is called
+		}
+	}
+	if !gotError {
+		t.Error("expected error chunk from stream")
+	}
+}
+
+func TestStream_NonJSONError(t *testing.T) {
+	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte("upstream error"))
+	})
+	defer srv.Close()
+
+	ch, err := p.Stream(context.Background(), llm.Request{
+		Messages: []llm.Message{{Role: "user", Content: "hi"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotError := false
+	for chunk := range ch {
+		if chunk.Type == llm.ChunkError {
+			gotError = true
+		}
+	}
+	if !gotError {
+		t.Error("expected error chunk from non-JSON error")
+	}
+}
+
+func TestChat_NonJSONError(t *testing.T) {
+	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte("upstream error"))
+	})
+	defer srv.Close()
+
+	_, err := p.Chat(context.Background(), llm.Request{
+		Messages: []llm.Message{{Role: "user", Content: "hi"}},
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestProvider_httpClientLazy(t *testing.T) {
+	p := &Provider{}
+	c1 := p.httpClient()
+	c2 := p.httpClient()
+	if c1 != c2 {
+		t.Error("httpClient should return cached instance")
+	}
+}
