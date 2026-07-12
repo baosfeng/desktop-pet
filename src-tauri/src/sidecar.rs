@@ -139,8 +139,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
                                 let is_error_resp = event_value
                                     .get("type")
                                     .and_then(|v| v.as_str())
-                                    .map_or(false, |t| t == "resp")
-                                    && event_value.get("error").and_then(|v| v.as_str()).map_or(false, |e| !e.is_empty());
+                                    == Some("resp")
+                                    && event_value.get("error").and_then(|v| v.as_str()).is_some_and(|e| !e.is_empty());
 
                                 let kind = if is_error_resp {
                                     "error"
@@ -156,8 +156,7 @@ pub async fn start_sidecar(handle: &AppHandle) {
                                 let data: serde_json::Value = if is_error_resp {
                                     event_value
                                         .get("error")
-                                        .map(|e| serde_json::json!({"error": e}))
-                                        .unwrap_or(serde_json::Value::Null)
+                                        .map_or(serde_json::Value::Null, |e| serde_json::json!({"error": e}))
                                 } else {
                                     event_value
                                         .get("data")
@@ -171,7 +170,7 @@ pub async fn start_sidecar(handle: &AppHandle) {
                                 }
                             },
                             Err(e) => {
-                                warn!("failed to parse sidecar event (data={}): {e}", trimmed);
+                                warn!("failed to parse sidecar event (data={trimmed}): {e}");
                             },
                         }
                     },

@@ -8,11 +8,22 @@ use tauri::{AppHandle, Manager};
 
 use crate::window;
 
+#[cfg(test)]
+#[path = "commands_test.rs"]
+mod commands_test;
+
 /// 窗口位置结构
 #[derive(Debug, Clone, Serialize)]
 pub struct Position {
     pub x: f64,
     pub y: f64,
+}
+
+/// 设置窗口透明度
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value)]
+pub fn set_window_opacity(app_handle: AppHandle, opacity: f64) -> tauri::Result<()> {
+    window::set_window_opacity(&app_handle, opacity)
 }
 
 /// 调整窗口大小

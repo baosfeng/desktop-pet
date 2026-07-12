@@ -11,6 +11,10 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::{App, AppHandle, Manager};
 
+#[cfg(test)]
+#[path = "window_test.rs"]
+mod window_test;
+
 /// 宠物窗口标签名
 const WINDOW_LABEL: &str = "pet";
 /// 窗口默认宽度
@@ -155,6 +159,25 @@ fn load_window_position(app: &App) -> Result<Position, Box<dyn std::error::Error
         x: clamped_x,
         y: clamped_y,
     })
+}
+
+/// 设置窗口透明度。
+///
+/// 通过向 WebView 注入 CSS 实现（Tauri v2 无原生 set_opacity）。
+/// `opacity` 取值范围 0.1–1.0，超出范围自动 clamp。
+///
+/// # Errors
+///
+/// 当窗口未创建或 eval 调用失败时返回错误。
+pub fn set_window_opacity(app_handle: &AppHandle, opacity: f64) -> tauri::Result<()> {
+    let window = app_handle
+        .get_webview_window(WINDOW_LABEL)
+        .ok_or_else(|| tauri::Error::WindowNotFound)?;
+
+    let clamped = opacity.clamp(0.1, 1.0);
+    let js = format!("document.body.style.opacity = '{clamped}';");
+    window.eval(&js)?;
+    Ok(())
 }
 
 /// 调整窗口大小。

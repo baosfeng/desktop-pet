@@ -35,6 +35,7 @@ fn main() {
             commands::get_window_position,
             commands::set_window_position,
             commands::resize_window,
+            commands::set_window_opacity,
             commands::chat,
             commands::get_status,
             commands::update_config,
