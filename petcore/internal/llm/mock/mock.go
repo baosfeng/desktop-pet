@@ -39,6 +39,7 @@ func (p *Provider) Name() string { return "mock" }
 func (p *Provider) Model() string { return "mock-v1" }
 
 // Stream 执行流式对话并返回结果片段通道。
+// 支持测试模式：设置 MOCK_LLM_TOOL_CALL=true 会先返回一个工具调用再返回文本。
 func (p *Provider) Stream(_ context.Context, req llm.Request) (<-chan llm.Chunk, error) {
 	ch := make(chan llm.Chunk, 10)
 
@@ -52,6 +53,20 @@ func (p *Provider) Stream(_ context.Context, req llm.Request) (<-chan llm.Chunk,
 		reply := os.Getenv("MOCK_LLM_REPLY")
 		if reply == "" {
 			reply = "[mock] Hello! I am your desktop pet."
+		}
+
+		// 测试模式：先返回工具调用
+		if os.Getenv("MOCK_LLM_TOOL_CALL") == "true" {
+			ch <- llm.Chunk{
+				Type: llm.ChunkToolCall,
+				ToolCall: &llm.ToolCall{
+					ID:   "mock_tool_1",
+					Tool: "test_tool",
+					Args: `{"key":"test","value":"hello"}`,
+				},
+			}
+			ch <- llm.Chunk{Type: llm.ChunkDone}
+			return
 		}
 
 		if os.Getenv("MOCK_LLM_SHOW_REASONING") == "true" {
