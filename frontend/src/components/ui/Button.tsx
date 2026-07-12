@@ -3,9 +3,14 @@ import type React from "react";
 
 type ButtonVariant = "primary" | "accent" | "secondary" | "outline" | "ghost";
 
-interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "style"> {
+interface ButtonProps {
   variant?: ButtonVariant;
   children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  type?: "button" | "submit" | "reset";
+  "aria-label"?: string;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {

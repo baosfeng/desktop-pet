@@ -14,7 +14,7 @@
  * ```
  */
 
-import { Application, Assets } from "pixi.js";
+import { Application } from "pixi.js";
 
 // pixi-live2d-display 的 TS 类型支持可能不完整，使用动态导入
 let Live2DModel: any;
@@ -68,16 +68,19 @@ export async function initLive2D(
     // 创建 PixiJS Application
     const app = new Application();
 
-    await app.init({
+    // Build init options, omitting resizeTo when parent is null (exactOptionalPropertyTypes compat)
+    const initOpts: Record<string, unknown> = {
       canvas,
       width: canvas.parentElement?.clientWidth ?? 300,
       height: canvas.parentElement?.clientHeight ?? 400,
-      transparent: true,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      resizeTo: canvas.parentElement ?? undefined,
-    });
+    };
+    if (canvas.parentElement) {
+      initOpts.resizeTo = canvas.parentElement;
+    }
+    await app.init(initOpts);
 
     // 加载 Live2D 模型
     if (modelPath) {
