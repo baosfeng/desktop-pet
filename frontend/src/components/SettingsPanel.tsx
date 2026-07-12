@@ -5,6 +5,75 @@ import type React from "react";
 import { usePetStore } from "@/stores/petStore";
 import { updateConfig } from "@/lib/bridge";
 
+/* ─── Provider 预设配置 ────────────────────── */
+
+interface ModelOption {
+  id: string;
+  label: string;
+}
+
+interface ProviderOption {
+  id: string;
+  label: string;
+  baseUrl: string;
+  models: ModelOption[];
+}
+
+const PROVIDERS: ProviderOption[] = [
+  {
+    id: "deepseek",
+    label: "DeepSeek",
+    baseUrl: "https://api.deepseek.com/v1",
+    models: [
+      { id: "deepseek-chat", label: "DeepSeek Chat (V3)" },
+      { id: "deepseek-reasoner", label: "DeepSeek Reasoner (R1)" },
+    ],
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    baseUrl: "https://api.openai.com/v1",
+    models: [
+      { id: "gpt-4o-mini", label: "GPT-4o Mini" },
+      { id: "gpt-4o", label: "GPT-4o" },
+      { id: "gpt-4-turbo", label: "GPT-4 Turbo" },
+    ],
+  },
+  {
+    id: "siliconflow",
+    label: "硅基流动",
+    baseUrl: "https://api.siliconflow.cn/v1",
+    models: [
+      { id: "deepseek-ai/DeepSeek-V3", label: "DeepSeek V3" },
+      { id: "deepseek-ai/DeepSeek-R1", label: "DeepSeek R1" },
+      { id: "Qwen/Qwen2.5-7B-Instruct", label: "Qwen2.5-7B" },
+      { id: "Qwen/Qwen2.5-14B-Instruct", label: "Qwen2.5-14B" },
+    ],
+  },
+  {
+    id: "ollama",
+    label: "Ollama（本地）",
+    baseUrl: "http://localhost:11434/v1",
+    models: [
+      { id: "llama3.2", label: "Llama 3.2" },
+      { id: "qwen2.5", label: "Qwen 2.5" },
+      { id: "mistral", label: "Mistral" },
+    ],
+  },
+];
+
+/* ─── 通用样式 ──────────────────────────────── */
+
+const inputClass =
+  "w-full px-3 py-2 border border-soft-brown/40 rounded-[8px] bg-cream text-text-brown text-[13px] outline-none focus:border-primary/60 transition-colors placeholder:text-text-brown/30 font-sans";
+
+const selectClass =
+  "w-full px-3 py-2 border border-soft-brown/40 rounded-[8px] bg-cream text-text-brown text-[13px] outline-none focus:border-primary/60 transition-colors font-sans appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+
+const labelClass = "text-[12px] font-medium text-accent uppercase tracking-[0.5px]";
+
+/* ─── 组件 ──────────────────────────────────── */
+
 interface SettingsPanelProps {
   onClose: () => void;
 }
@@ -16,6 +85,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
 
   const [form, setForm] = useState({ ...storeSettings });
 
+  // 根据当前 form.provider 查找 ProviderOption（必定存在，因为下拉选项与 PROVIDERS 一致）
+  const currentProvider = (PROVIDERS.find((p) => p.id === form.provider) ?? PROVIDERS[0]) as ProviderOption;
+
   const handleChange = useCallback(
     (field: keyof typeof form, value: string | number) => {
       setForm((prev) => ({ ...prev, [field]: value }));
@@ -23,14 +95,28 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
     [],
   );
 
+  // 切换 Provider 时自动更新 baseUrl 和 modelName
+  const handleProviderChange = useCallback(
+    (providerId: string) => {
+      const provider = PROVIDERS.find((p) => p.id === providerId);
+      if (!provider) return;
+      setForm((prev) => ({
+        ...prev,
+        provider: provider.id,
+        baseUrl: provider.baseUrl,
+        modelName: provider.models[0]?.id ?? prev.modelName,
+      }));
+    },
+    [],
+  );
+
   const handleSave = useCallback(() => {
-    // 更新 store 并保存到 localStorage
     updateSettings(form);
     saveSettings();
 
-    // 将 LLM 设置同步到 PetCore 后端
     const llmConfig = {
       apiKey: form.apiKey,
+      provider: form.provider,
       baseUrl: form.baseUrl,
       modelName: form.modelName,
       systemPrompt: form.persona,
@@ -44,11 +130,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
     setForm({ ...storeSettings });
     onClose();
   }, [storeSettings, onClose]);
-
-  const inputClass =
-    "w-full px-3 py-2 border border-soft-brown/40 rounded-[8px] bg-cream text-text-brown text-[13px] outline-none focus:border-primary/60 transition-colors placeholder:text-text-brown/30 font-sans";
-
-  const labelClass = "text-[12px] font-medium text-accent uppercase tracking-[0.5px]";
 
   return (
     <AnimatePresence>
@@ -80,27 +161,43 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
             />
           </label>
 
-          {/* Base URL */}
+          {/* Provider */}
           <label className="flex flex-col gap-1 mb-4">
-            <span className={labelClass}>Base URL</span>
-            <input
-              className={inputClass}
-              type="text"
-              placeholder="https://api.openai.com/v1"
-              value={form.baseUrl}
-              onChange={(e): void => { handleChange("baseUrl", e.target.value); }}
-            />
+            <span className={labelClass}>服务商</span>
+            <select
+              className={selectClass}
+              value={form.provider}
+              onChange={(e): void => { handleProviderChange(e.target.value); }}
+            >
+              {PROVIDERS.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
           </label>
 
-          {/* Model Name */}
+          {/* Model */}
           <label className="flex flex-col gap-1 mb-4">
-            <span className={labelClass}>模型名</span>
-            <input
-              className={inputClass}
-              type="text"
-              placeholder="gpt-4o-mini"
+            <span className={labelClass}>模型</span>
+            <select
+              className={selectClass}
               value={form.modelName}
               onChange={(e): void => { handleChange("modelName", e.target.value); }}
+            >
+              {currentProvider.models.map((m) => (
+                <option key={m.id} value={m.id}>{m.label}</option>
+              ))}
+            </select>
+          </label>
+
+          {/* Base URL（只读展示，不可编辑） */}
+          <label className="flex flex-col gap-1 mb-4">
+            <span className={labelClass}>接口地址</span>
+            <input
+              className={`${inputClass} opacity-60 cursor-not-allowed`}
+              type="text"
+              value={currentProvider.baseUrl}
+              readOnly
+              tabIndex={-1}
             />
           </label>
 

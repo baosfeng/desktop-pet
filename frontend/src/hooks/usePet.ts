@@ -134,6 +134,7 @@ export function useSettings(): {
     const s = usePetStore.getState().settings;
     void updateConfig({
       apiKey: s.apiKey,
+      provider: s.provider,
       baseUrl: s.baseUrl,
       modelName: s.modelName,
       systemPrompt: s.persona,

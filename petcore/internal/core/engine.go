@@ -127,16 +127,26 @@ func (e *Engine) SetSink(sink event.Sink) {
 	e.sink = sink
 }
 
-// UpdateLLMConfig 热更新 LLM Provider 配置（API Key / Base URL / Model / System Prompt）。
+// UpdateLLMConfig 热更新 LLM Provider 配置（Provider / API Key / Base URL / Model / System Prompt）。
 // 由 update_config 命令触发，用户从设置面板保存时调用。
-func (e *Engine) UpdateLLMConfig(apiKey, baseURL, model, systemPrompt string) error {
-	// 确定 provider 名称：如果当前是 mock，切换到 openai（兼容所有 OpenAI 兼容 API）
-	providerName := e.cfg.LLM.Provider
+func (e *Engine) UpdateLLMConfig(provider, apiKey, baseURL, model, systemPrompt string) error {
+	// 确定 provider 名称：来自前端的 provider 字段，如果为空则 fallback
+	providerName := provider
+	if providerName == "" {
+		providerName = e.cfg.LLM.Provider
+	}
 	if providerName == "mock" {
 		providerName = "openai"
 	}
 
-	// 更新 system prompt
+	// 更新 provider 和 system prompt 到 config
+	e.cfg.LLM.Provider = providerName
+	if baseURL != "" {
+		e.cfg.LLM.BaseURL = baseURL
+	}
+	if model != "" {
+		e.cfg.LLM.Model = model
+	}
 	if systemPrompt != "" {
 		e.cfg.Agent.SystemPrompt = systemPrompt
 	}
@@ -146,19 +156,15 @@ func (e *Engine) UpdateLLMConfig(apiKey, baseURL, model, systemPrompt string) er
 	if apiKey != "" {
 		cfgMap["api_key"] = apiKey
 	}
-	if baseURL != "" {
-		cfgMap["base_url"] = baseURL
-	}
-	if model != "" {
-		cfgMap["model"] = model
-	}
+	cfgMap["base_url"] = e.cfg.LLM.BaseURL
+	cfgMap["model"] = e.cfg.LLM.Model
 
-	provider, err := llm.NewProvider(providerName, cfgMap)
+	newProvider, err := llm.NewProvider(providerName, cfgMap)
 	if err != nil {
 		return fmt.Errorf("engine: update LLM config: %w", err)
 	}
 
-	e.agent.SetProvider(provider)
+	e.agent.SetProvider(newProvider)
 	e.log.Info("LLM provider hot-updated", "provider", providerName, "model", model, "base_url", baseURL)
 	return nil
 }

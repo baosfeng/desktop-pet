@@ -27,6 +27,7 @@ export async function getStatus(): Promise<Record<string, unknown>> {
 
 export interface LLMConfig {
   apiKey: string;
+  provider: string;
   baseUrl: string;
   modelName: string;
   systemPrompt: string;

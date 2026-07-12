@@ -35,8 +35,9 @@ beforeEach(() => {
     messages: [],
     settings: {
       apiKey: "",
-      baseUrl: "https://api.openai.com/v1",
-      modelName: "gpt-4o-mini",
+      provider: "deepseek",
+      baseUrl: "https://api.deepseek.com/v1",
+      modelName: "deepseek-chat",
       persona: "test",
       opacity: 0.9,
     },

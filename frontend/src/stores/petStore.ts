@@ -11,6 +11,7 @@ export interface Message {
 
 export interface Settings {
   apiKey: string;
+  provider: string;
   baseUrl: string;
   modelName: string;
   persona: string;
@@ -43,8 +44,9 @@ const STORAGE_KEY = "desktop-pet-settings";
 
 const DEFAULT_SETTINGS: Settings = {
   apiKey: "",
-  baseUrl: "https://api.openai.com/v1",
-  modelName: "gpt-4o-mini",
+  provider: "deepseek",
+  baseUrl: "https://api.deepseek.com/v1",
+  modelName: "deepseek-chat",
   persona: "你是一只可爱的桌面宠物，性格活泼友善。",
   opacity: 0.9,
 };
