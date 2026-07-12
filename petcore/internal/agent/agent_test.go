@@ -101,7 +101,91 @@ func TestAgent_NoProvider(t *testing.T) {
 	a := New(nil)
 	err := a.Run(context.Background(), Request{})
 	if err == nil {
-		t.Error("expected error when no provider")
+		t.Error("expected error when provider")
+	}
+}
+
+func TestAgent_WithFlagsOption(t *testing.T) {
+	provider, err := llm.NewProvider("mock", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// WithFlags should not panic with nil
+	a := New(provider, WithFlags(nil))
+	if a == nil {
+		t.Fatal("New returned nil")
+	}
+
+	err = a.Run(context.Background(), Request{
+		Messages:     []llm.Message{{Role: "user", Content: "hi"}},
+		SystemPrompt: "test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPipelineStage_Names(t *testing.T) {
+	tests := []struct {
+		stage    Stage
+		wantName string
+	}{
+		{&PreProcessStage{}, "PreProcess"},
+		{&MemoryStage{}, "Memory"},
+		{&LLMCallStage{}, "LLMCall"},
+		{&PostProcessStage{}, "PostProcess"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.wantName, func(t *testing.T) {
+			if got := tc.stage.Name(); got != tc.wantName {
+				t.Errorf("Name() = %q, want %q", got, tc.wantName)
+			}
+		})
+	}
+}
+
+func TestPipelineCtx_Messages(t *testing.T) {
+	msgs := []llm.Message{{Role: "user", Content: "hello"}}
+	pCtx := &pipelineCtx{
+		Request: Request{Messages: msgs},
+		Sink:    event.NoopSink{},
+	}
+	got := pCtx.Messages()
+	if len(got) != 1 || got[0].Content != "hello" {
+		t.Errorf("Messages() = %v, want %v", got, msgs)
+	}
+}
+
+func TestAgent_SetSink_Nil(t *testing.T) {
+	provider, _ := llm.NewProvider("mock", nil)
+	a := New(provider)
+	// SetSink with nil should not panic
+	a.SetSink(nil)
+}
+
+func TestAgent_SetSink_Replaces(t *testing.T) {
+	provider, _ := llm.NewProvider("mock", nil)
+	a := New(provider)
+	ch := make(chan event.Event, 10)
+	a.SetSink(&eventChannelSink{ch: ch})
+
+	err := a.Run(context.Background(), Request{
+		Messages:     []llm.Message{{Role: "user", Content: "hi"}},
+		SystemPrompt: "test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case e := <-ch:
+		if e.Kind == "" {
+			t.Error("event should have a kind")
+		}
+	default:
+		t.Error("expected events after SetSink")
 	}
 }
 
