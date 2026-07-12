@@ -34,4 +34,4 @@ echo "  1) cargo tauri dev         — 完整开发（推荐）"
 echo "  2) 分步启动               — 后端/前端/壳分别调试"
 echo ""
 echo "正在启动完整开发模式..."
-cd "$SRC_TAURI_DIR" && cargo tauri dev
+cargo tauri dev

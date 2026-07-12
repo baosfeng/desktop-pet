@@ -12,9 +12,9 @@ help: ## 显示帮助
 
 # ─── 开发 ─────────────────────────────────────
 
-dev: ## 启动完整开发环境（cargo tauri dev）
+dev: ## 启动完整开发环境（cargo tauri dev，需在项目根目录执行）
 	@echo "🚀 启动 Tauri 开发环境..."
-	cd src-tauri && cargo tauri dev
+	cargo tauri dev
 
 dev-frontend: ## 仅启动前端 Vite 开发服务器
 	cd frontend && pnpm dev
