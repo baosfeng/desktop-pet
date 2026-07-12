@@ -14,6 +14,15 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   // 全局忽略
   { ignores: ["dist/", ".vite/", "node_modules/", "public/"] },
+  // shadcn-ui 组件使用 CVA 类型链，variant/size 联合类型
+  // 在 JSX data-* 属性和 render prop 中触发 no-unsafe-assignment
+  {
+    name: "shadcn-ui-overrides",
+    files: ["src/components/ui/**/*.ts", "src/components/ui/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+    },
+  },
 
   // 基础 JS 推荐规则
   js.configs.recommended,
