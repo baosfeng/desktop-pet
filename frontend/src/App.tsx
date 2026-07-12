@@ -5,10 +5,11 @@ import { ChatBubble } from "@/components/ChatBubble";
 import { SettingsPanel } from "@/components/SettingsPanel";
 
 import { useChat, usePetEvent, useSettings } from "@/hooks/usePet";
-import { generateId, usePetStore } from "@/stores/petStore";
 
-import { initLive2D, setModelExpression, setModelMotion } from "@/lib/live2d";
 import { setWindowOpacity } from "@/lib/bridge";
+import { initLive2D, setModelExpression, setModelMotion } from "@/lib/live2d";
+
+import { generateId, usePetStore } from "@/stores/petStore";
 
 import "./app.css";
 
@@ -42,7 +43,8 @@ export default function App(): React.JSX.Element {
 
     // 使用 Live2D 官方示例模型 Haru（CDN 加载）
     // 模型许可：https://www.live2d.com/eula/live2d-free-material-license-agreement_en.html
-    const modelPath = "https://cdn.jsdelivr.net/gh/Live2D/CubismWebSamples@develop/Samples/Resources/Haru/Haru.model3.json";
+    const modelPath =
+      "https://cdn.jsdelivr.net/gh/Live2D/CubismWebSamples@develop/Samples/Resources/Haru/Haru.model3.json";
     void initLive2D(canvas, {
       modelPath,
       scale: 0.5,
@@ -57,11 +59,11 @@ export default function App(): React.JSX.Element {
         const msg = err instanceof Error ? err.message : String(err);
         setLive2dError(msg);
         // 同时输出到终端日志
-        import("@tauri-apps/api/core").then(({ invoke }) => {
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-          invoke("log_from_frontend", { level: "error", message: msg }).catch(() => {});
-          // eslint-disable-next-line @typescript-eslint/no-empty-function
-        }).catch(() => {});
+        import("@tauri-apps/api/core")
+          .then(({ invoke }) => {
+            invoke("log_from_frontend", { level: "error", message: msg }).catch(() => undefined);
+          })
+          .catch(() => undefined);
       });
 
     return (): void => {
@@ -159,11 +161,11 @@ export default function App(): React.JSX.Element {
         {/* 宠物区域 */}
         <div className="flex flex-col items-center justify-center shrink-0 py-1">
           <div
-          className="relative w-[35%] max-w-[160px] aspect-square flex items-center justify-center cursor-pointer"
-          onClick={interact}
-          role="button"
-          aria-label="点击与宠物互动"
-        >
+            className="relative w-[35%] max-w-[160px] aspect-square flex items-center justify-center cursor-pointer"
+            onClick={interact}
+            role="button"
+            aria-label="点击与宠物互动"
+          >
             <canvas id="live2d-canvas" className="w-full h-full block pointer-events-none" />
             {!live2dReady && !live2dError && (
               <div className="absolute inset-0 flex items-center justify-center text-text-brown/50 text-xs">
@@ -179,7 +181,13 @@ export default function App(): React.JSX.Element {
           {/* 草地装饰 */}
           <div className="w-[35%] max-w-[180px] h-3 bg-gradient-to-r from-green-light/40 via-primary/30 to-green-light/40 rounded-full mt-0.5" />
           <div className="text-xs text-text-brown/50 mt-0.5 font-display">
-            {petState === "idle" ? "晒太阳中~" : petState === "attention" ? "看着你呢~" : petState === "interaction" ? "摸摸我吧~" : "正在说话..."}
+            {petState === "idle"
+              ? "晒太阳中~"
+              : petState === "attention"
+                ? "看着你呢~"
+                : petState === "interaction"
+                  ? "摸摸我吧~"
+                  : "正在说话..."}
           </div>
         </div>
 

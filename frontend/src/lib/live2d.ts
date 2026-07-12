@@ -13,7 +13,6 @@
  * });
  * ```
  */
-
 import { Application } from "pixi.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call -- pixi-live2d-display 缺少 TS 类型 */
@@ -60,12 +59,7 @@ export async function initLive2D(
       CubismFramework.initialize();
     }
 
-    const {
-      modelPath = "",
-      scale = 0.5,
-      x = 0,
-      y = 0,
-    } = options;
+    const { modelPath = "", scale = 0.5, x = 0, y = 0 } = options;
 
     // 创建 PixiJS Application
     const app = new Application();
@@ -107,10 +101,7 @@ export async function initLive2D(
 /**
  * 设置模型动画（表情/动作）
  */
-export async function setModelExpression(
-  app: Application,
-  expressionId: string,
-): Promise<void> {
+export async function setModelExpression(app: Application, expressionId: string): Promise<void> {
   const model = (app as any).__live2dModel;
   if (!model?.internalModel) return;
 

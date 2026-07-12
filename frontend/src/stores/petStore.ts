@@ -99,7 +99,9 @@ function loadSettingsFromStorage(): Settings {
 export const usePetStore = create<PetStore>((set, get) => ({
   // Pet state
   petState: "idle",
-  setPetState: (state) => { set({ petState: state }); },
+  setPetState: (state) => {
+    set({ petState: state });
+  },
 
   // Messages
   messages: loadMessagesFromStorage(),
@@ -121,14 +123,18 @@ export const usePetStore = create<PetStore>((set, get) => ({
     });
   },
 
-  clearMessages: () => { set({ messages: [] }); },
+  clearMessages: () => {
+    set({ messages: [] });
+  },
 
   // Settings
   settings: loadSettingsFromStorage(),
   updateSettings: (partial) => {
     set((state) => ({ settings: { ...state.settings, ...partial } }));
   },
-  loadSettings: () => { set({ settings: loadSettingsFromStorage() }); },
+  loadSettings: () => {
+    set({ settings: loadSettingsFromStorage() });
+  },
   saveSettings: () => {
     const { settings } = get();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -136,11 +142,15 @@ export const usePetStore = create<PetStore>((set, get) => ({
 
   // Settings panel
   showSettings: false,
-  toggleSettings: () => { set((state) => ({ showSettings: !state.showSettings })); },
+  toggleSettings: () => {
+    set((state) => ({ showSettings: !state.showSettings }));
+  },
 
   // Live2D
   live2dApp: null,
-  setLive2dApp: (app) => { set({ live2dApp: app }); },
+  setLive2dApp: (app) => {
+    set({ live2dApp: app });
+  },
 }));
 
 // --- 消息持久化：debounce 500ms 写入 localStorage ---
@@ -152,9 +162,7 @@ usePetStore.subscribe(
     if (saveTimer !== null) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       try {
-        const trimmed = messages.length > MAX_MESSAGES
-          ? messages.slice(-MAX_MESSAGES)
-          : messages;
+        const trimmed = messages.length > MAX_MESSAGES ? messages.slice(-MAX_MESSAGES) : messages;
         localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(trimmed));
       } catch {
         // ignore

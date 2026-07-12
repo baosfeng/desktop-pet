@@ -1,0 +1,88 @@
+# Desktop Pet — 配置示例
+# ==============================================
+# 本文件是 petcore 的完整配置参考模板，包含所有配置项和说明。
+# 请勿直接使用，复制到 ~/.desktop-pet/config.toml 或
+# ~/.desktop-pet-dev/config.toml 后按需修改。
+#
+# 配置加载顺序（后加载覆盖前者）：
+#   1. 内置默认值（DefaultConfigFor）
+#   2. {data_dir}/config.toml（基础配置）
+#   3. {data_dir}/config.{env}.toml（环境覆盖，env=development/production）
+#
+# 环境选择：
+#   PETCORE_ENV=development（开发，默认）
+#   PETCORE_ENV=production（生产）
+#
+# 数据目录（包含 config.toml）：
+#   开发: PETCORE_DATA_DIR=~/.desktop-pet-dev（dev.sh 自动设置）
+#   生产: 默认为 ~/.desktop-pet
+
+###############################################################################
+# LLM Provider 配置
+# provider: mock / openai / ollama / deepseek
+# - mock: 内置模拟 LLM，无需网络和 API Key，适合开发测试
+# - openai: OpenAI 兼容 API（也支持 deepseek、通义千问等兼容服务）
+# - ollama: 本地 Ollama 服务
+###############################################################################
+[llm]
+# provider = "openai"
+# model = "gpt-4o-mini"
+# base_url = "https://api.openai.com/v1"
+# api_key_env = "PETCORE_API_KEY"    # 从环境变量读取 API Key
+# max_tokens = 4096
+# temperature = 0.7
+
+###############################################################################
+# AI Agent 配置
+###############################################################################
+[agent]
+# system_prompt = "你是一只可爱的桌面宠物，性格活泼友善。"
+# temperature = 0.7
+# max_tool_turns = 10     # 单次对话最大工具调用轮数
+
+###############################################################################
+# 窗口配置（Tauri 桌面壳读取，petcore 仅透传）
+###############################################################################
+[window]
+# always_on_top = true
+# transparent = true
+# opacity = 1.0
+
+###############################################################################
+# 自动更新配置
+###############################################################################
+[update]
+# auto_check = true
+# channel = "stable"      # stable / beta
+
+###############################################################################
+# 记忆系统配置（Phase 2+）
+###############################################################################
+[memory]
+# short_term_size = 20    # L1 短期记忆保留的对话轮数
+
+###############################################################################
+# 插件系统配置（Phase 4）
+###############################################################################
+[plugin]
+# actions_dir = "~/.desktop-pet/actions"    # L1 YAML 动作包目录
+# scripts_dir = "~/.desktop-pet/scripts"    # L2 JS 脚本目录
+
+# L3 MCP 插件定义
+# [[plugin.mcps]]
+# name = "example-mcp"
+# command = "node"
+# args = ["/path/to/mcp-server/index.js"]
+# enabled = false
+
+###############################################################################
+# 功能开关
+# 每个功能开关控制一个渐进式功能的启用/禁用
+# 开发环境建议逐个开启测试
+###############################################################################
+[feature_flags]
+# "agent.memory_stage" = true    # 记忆阶段（生产环境开启）
+# "agent.tool_loop" = true       # 工具调用循环（生产环境开启）
+# "plugin.l1_yaml" = false       # L1 YAML 动作包（Phase 4）
+# "plugin.l2_js" = false         # L2 JS 脚本（Phase 4）
+# "plugin.l3_mcp" = false        # L3 MCP 插件（Phase 4）

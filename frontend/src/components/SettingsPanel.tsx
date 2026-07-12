@@ -1,12 +1,7 @@
 import { useCallback, useState } from "react";
 import type React from "react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -16,8 +11,9 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
-import { usePetStore } from "@/stores/petStore";
 import { setWindowOpacity, updateConfig } from "@/lib/bridge";
+
+import { usePetStore } from "@/stores/petStore";
 
 /* ─── API Key 验证 ──────────────────────────── */
 
@@ -48,10 +44,13 @@ async function verifyApiKey(
       return { ok: false, message: "API Key 无效或已过期" };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const body = await res.json().catch(() => null);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const detail = body?.error?.message ?? body?.message ?? `HTTP ${String(res.status)}`;
+    const rawBody: unknown = await res.json().catch(() => null);
+    const body = rawBody as Record<string, unknown> | null;
+    const errObj = body?.error as Record<string, unknown> | undefined;
+    const detail =
+      (errObj?.message as string | undefined) ??
+      (body?.message as string | undefined) ??
+      `HTTP ${String(res.status)}`;
     return { ok: false, message: detail };
   } catch (err: unknown) {
     const msg = err instanceof TypeError ? "无法连接到服务器，请检查网络或接口地址" : String(err);
@@ -131,26 +130,20 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const currentProvider = PROVIDERS.find((p) => p.id === form.provider) ?? PROVIDERS[0]!;
 
-  const handleChange = useCallback(
-    (field: keyof typeof form, value: string | number) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
-    },
-    [],
-  );
+  const handleChange = useCallback((field: keyof typeof form, value: string | number) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
-  const handleProviderChange = useCallback(
-    (value: string) => {
-      const provider = PROVIDERS.find((p) => p.id === value);
-      if (!provider) return;
-      setForm((prev) => ({
-        ...prev,
-        provider: provider.id,
-        baseUrl: provider.baseUrl,
-        modelName: provider.models[0]?.id ?? prev.modelName,
-      }));
-    },
-    [],
-  );
+  const handleProviderChange = useCallback((value: string) => {
+    const provider = PROVIDERS.find((p) => p.id === value);
+    if (!provider) return;
+    setForm((prev) => ({
+      ...prev,
+      provider: provider.id,
+      baseUrl: provider.baseUrl,
+      modelName: provider.models[0]?.id ?? prev.modelName,
+    }));
+  }, []);
 
   const handleVerify = useCallback(async () => {
     if (!form.apiKey) {
@@ -184,7 +177,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
   const canSave = !form.apiKey || verifyStatus === "success";
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) handleClose(); }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[420px] p-0 gap-0 max-h-[85vh] overflow-hidden">
         <DialogHeader className="px-6 pt-5 pb-2">
           <DialogTitle className="text-xl font-display font-bold">⚙️ 设置</DialogTitle>
@@ -194,7 +192,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
           {/* API Key */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-accent uppercase tracking-wider">API Key</label>
+              <label className="text-xs font-semibold text-accent uppercase tracking-wider">
+                API Key
+              </label>
               <button
                 className={`text-[11px] px-2.5 py-1 rounded-md border-none cursor-pointer font-medium transition-all
                   ${verifyStatus === "idle" ? "bg-accent/15 text-accent hover:bg-accent/25" : ""}
@@ -229,14 +229,23 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
 
           {/* Provider */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-accent uppercase tracking-wider">服务商</label>
-            <Select value={form.provider} onValueChange={(v) => { if (v) handleProviderChange(v); }}>
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">
+              服务商
+            </label>
+            <Select
+              value={form.provider}
+              onValueChange={(v) => {
+                if (v) handleProviderChange(v);
+              }}
+            >
               <SelectTrigger className="w-full h-auto px-3 py-2 rounded-lg text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {PROVIDERS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -244,17 +253,23 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
 
           {/* Model */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-accent uppercase tracking-wider">模型</label>
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">
+              模型
+            </label>
             <Select
               value={form.modelName}
-              onValueChange={(v) => { if (v) handleChange("modelName", v); }}
+              onValueChange={(v) => {
+                if (v) handleChange("modelName", v);
+              }}
             >
               <SelectTrigger className="w-full h-auto px-3 py-2 rounded-lg text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {currentProvider.models.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -262,7 +277,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
 
           {/* Base URL */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-accent uppercase tracking-wider">接口地址</label>
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">
+              接口地址
+            </label>
             <input
               className="w-full h-auto px-3 py-2 rounded-lg border border-input bg-muted/30 text-sm text-muted-foreground cursor-not-allowed outline-none"
               type="text"
@@ -274,13 +291,17 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
 
           {/* Persona */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-accent uppercase tracking-wider">角色人设</label>
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">
+              角色人设
+            </label>
             <textarea
               className="w-full h-auto min-h-[60px] px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all resize-y"
               placeholder="描述宠物的性格…"
               rows={3}
               value={form.persona}
-              onChange={(e): void => { handleChange("persona", e.target.value); }}
+              onChange={(e): void => {
+                handleChange("persona", e.target.value);
+              }}
             />
           </div>
 
@@ -291,8 +312,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
             </label>
             <Slider
               value={[form.opacity]}
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
-              onValueChange={(v) => { const val = Array.isArray(v) ? v[0] : v; if (val !== undefined) handleChange("opacity", val); }}
+              onValueChange={(v: number[]) => {
+                const val = v[0];
+                if (val !== undefined) handleChange("opacity", val);
+              }}
               min={0.1}
               max={1}
               step={0.05}
@@ -306,9 +329,11 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
           <div className="flex gap-3">
             <button
               className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border-none transition-all
-                ${canSave
-                  ? "bg-primary text-primary-foreground cursor-pointer hover:opacity-90 active:scale-95"
-                  : "bg-muted text-muted-foreground/50 cursor-not-allowed"}`}
+                ${
+                  canSave
+                    ? "bg-primary text-primary-foreground cursor-pointer hover:opacity-90 active:scale-95"
+                    : "bg-muted text-muted-foreground/50 cursor-not-allowed"
+                }`}
               onClick={canSave ? handleSave : undefined}
               type="button"
             >

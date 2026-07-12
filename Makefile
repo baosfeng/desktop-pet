@@ -2,7 +2,7 @@
 # 跨平台统一命令入口（macOS / Linux / Windows via WSL）
 # 如果不可用，各语言的底层命令见 docs/开发指南/构建与测试.md
 
-.PHONY: help dev build test lint fmt clean devcontainer-setup
+.PHONY: help dev dev-petcore-cli build test lint fmt clean devcontainer-setup
 
 help: ## 显示帮助
 	@echo "Desktop Pet 开发命令:"
@@ -12,22 +12,28 @@ help: ## 显示帮助
 
 # ─── 开发 ─────────────────────────────────────
 
+# ─── 开发环境变量 ─────────────────────────────
+DEV_ENV := PETCORE_ENV=development PETCORE_DATA_DIR=$(HOME)/.desktop-pet-dev
+
 dev: ## 启动完整开发环境（cargo tauri dev，需在项目根目录执行）
 	@echo "🚀 启动 Tauri 开发环境..."
-	cargo tauri dev
+	$(DEV_ENV) cargo tauri dev
 
 dev-frontend: ## 仅启动前端 Vite 开发服务器
 	cd frontend && pnpm dev
 
-dev-petcore: ## 仅启动 Go PetCore sidecar 模式
-	cd petcore && go run ./cmd/petcore/ --mode sidecar
+dev-petcore: ## 仅启动 Go PetCore sidecar 模式（开发配置）
+	$(DEV_ENV) cd petcore && go run ./cmd/petcore/
+
+dev-petcore-cli: ## 启动 Go PetCore CLI 模式（交互式对话，开发配置）
+	$(DEV_ENV) cd petcore && go run ./cmd/petcore/ --cli
 
 dev-petcore-watch: ## 启动 Go PetCore + 热重载（需安装 air: go install github.com/air-verse/air@latest）
 	@command -v air >/dev/null 2>&1 || { \
 		echo "❌ 需要安装 air: go install github.com/air-verse/air@latest"; \
 		exit 1; \
 	}
-	cd petcore && air -- --mode sidecar
+	$(DEV_ENV) cd petcore && air
 
 # ─── 构建 ─────────────────────────────────────
 

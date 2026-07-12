@@ -1,41 +1,42 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+/* ------------------------------------------------------------------ */
+/*  Imports after mocks                                                */
+/* ------------------------------------------------------------------ */
+import { Application } from "pixi.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { initLive2D, setModelExpression, setModelMotion } from "./live2d";
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks — accessible inside vi.mock factories even after hoisting
 // ---------------------------------------------------------------------------
 
-const {
-  mockLive2DModel,
-  mockLive2DModelFrom,
-  mockAppInit,
-  mockStageAddChild,
-  MockApplication,
-} = vi.hoisted(() => {
-  const model = {
-    anchor: { set: vi.fn() },
-    position: { set: vi.fn() },
-    scale: { set: vi.fn() },
-    internalModel: { expressions: [], motions: {} },
-    expression: vi.fn<[string], Promise<void>>().mockResolvedValue(undefined),
-    motion: vi.fn<[string, number], Promise<void>>().mockResolvedValue(undefined),
-  };
+const { mockLive2DModel, mockLive2DModelFrom, mockAppInit, mockStageAddChild, MockApplication } =
+  vi.hoisted(() => {
+    const model = {
+      anchor: { set: vi.fn() },
+      position: { set: vi.fn() },
+      scale: { set: vi.fn() },
+      internalModel: { expressions: [], motions: {} },
+      expression: vi.fn<[string], Promise<void>>().mockResolvedValue(undefined),
+      motion: vi.fn<[string, number], Promise<void>>().mockResolvedValue(undefined),
+    };
 
-  const appInit = vi.fn<[Record<string, unknown>], Promise<void>>().mockResolvedValue(undefined);
-  const stageAddChild = vi.fn();
+    const appInit = vi.fn<[Record<string, unknown>], Promise<void>>().mockResolvedValue(undefined);
+    const stageAddChild = vi.fn();
 
-  class App {
-    init = appInit;
-    stage = { addChild: stageAddChild };
-  }
+    class App {
+      init = appInit;
+      stage = { addChild: stageAddChild };
+    }
 
-  return {
-    mockLive2DModel: model,
-    mockLive2DModelFrom: vi.fn<[string], Promise<typeof model>>().mockResolvedValue(model),
-    mockAppInit: appInit,
-    mockStageAddChild: stageAddChild,
-    MockApplication: App,
-  };
-});
+    return {
+      mockLive2DModel: model,
+      mockLive2DModelFrom: vi.fn<[string], Promise<typeof model>>().mockResolvedValue(model),
+      mockAppInit: appInit,
+      mockStageAddChild: stageAddChild,
+      MockApplication: App,
+    };
+  });
 
 vi.mock("pixi-live2d-display/cubism4", () => ({
   Live2DModel: {
@@ -53,19 +54,6 @@ vi.mock("pixi-live2d-display/cubism4", () => ({
 vi.mock("pixi.js", () => ({
   Application: MockApplication,
 }));
-
-/* ------------------------------------------------------------------ */
-/*  Imports after mocks                                                */
-/* ------------------------------------------------------------------ */
-
-/* eslint-disable import/first */
-import { Application } from "pixi.js";
-import {
-  initLive2D,
-  setModelExpression,
-  setModelMotion,
-} from "./live2d";
-/* eslint-enable import/first */
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

@@ -1,0 +1,27 @@
+# Desktop Pet — 开发环境覆盖配置示例
+# ==============================================
+# 本文件作为 config.toml 的覆盖层，仅包含开发环境需要覆盖的字段。
+# 放置在与 config.toml 相同的目录，文件名为 config.development.toml。
+#
+# 加载方式：PETCORE_ENV=development 时自动加载
+# （dev.sh 和 make dev-* 已自动设置）
+#
+# 覆盖规则：TOML 合并，相同字段覆盖，未指定的字段保留基础配置的值。
+
+[llm]
+# 开发环境默认使用 mock LLM 避免产生 API 费用
+provider = "mock"
+model = "mock-v1"
+
+[update]
+# 开发环境不检查更新
+auto_check = false
+channel = "beta"
+
+[feature_flags]
+# 开发环境按需开启测试功能
+"agent.memory_stage" = true
+"agent.tool_loop" = true
+"plugin.l1_yaml" = false
+"plugin.l2_js" = false
+"plugin.l3_mcp" = false

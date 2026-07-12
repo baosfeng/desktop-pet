@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { type PetEvent, onPetEvent, sendMessage, updateConfig } from "@/lib/bridge";
 import { setModelExpression, setModelMotion } from "@/lib/live2d";
+
 import { generateId, usePetStore } from "@/stores/petStore";
 import type { Message, PetState, Settings } from "@/stores/petStore";
 
@@ -48,12 +49,15 @@ export function usePetEvent(): void {
 
   const startIdleInterval = useCallback(() => {
     clearIdleInterval();
-    idleIntervalRef.current = setInterval(() => {
-      const app = usePetStore.getState().live2dApp;
-      if (app) {
-        void setModelMotion(app as Parameters<typeof setModelMotion>[0], "Shake", 0);
-      }
-    }, 5000 + Math.random() * 10000); // 5-15 秒随机间隔
+    idleIntervalRef.current = setInterval(
+      () => {
+        const app = usePetStore.getState().live2dApp;
+        if (app) {
+          void setModelMotion(app as Parameters<typeof setModelMotion>[0], "Shake", 0);
+        }
+      },
+      5000 + Math.random() * 10000,
+    ); // 5-15 秒随机间隔
   }, [clearIdleInterval]);
 
   useEffect(() => {

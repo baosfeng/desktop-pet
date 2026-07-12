@@ -28,7 +28,17 @@ if ! cargo tauri --version >/dev/null 2>&1; then
   cargo install tauri-cli --version "^2"
 fi
 
+# 设置开发环境配置
+export PETCORE_ENV="${PETCORE_ENV:-development}"
+export PETCORE_DATA_DIR="${PETCORE_DATA_DIR:-$HOME/.desktop-pet-dev}"
+
 echo ""
+echo "📋 开发环境配置:"
+echo "  PETCORE_ENV       = $PETCORE_ENV"
+echo "  PETCORE_DATA_DIR  = $PETCORE_DATA_DIR"
+echo "  配置文件          = $PETCORE_DATA_DIR/config.toml"
+echo ""
+
 echo "▶️  启动方式选择:"
 echo "  1) cargo tauri dev         — 完整开发（推荐）"
 echo "  2) 分步启动               — 后端/前端/壳分别调试"

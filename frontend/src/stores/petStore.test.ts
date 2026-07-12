@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { usePetStore, generateId } from "../stores/petStore";
+import { generateId, usePetStore } from "../stores/petStore";
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -118,15 +118,15 @@ describe("petStore", () => {
     it("persists settings to localStorage", () => {
       usePetStore.getState().updateSettings({ opacity: 0.5 });
       usePetStore.getState().saveSettings();
-      const saved = JSON.parse(localStorage.getItem("desktop-pet-settings") ?? "{}") as Record<string, unknown>;
+      const saved = JSON.parse(localStorage.getItem("desktop-pet-settings") ?? "{}") as Record<
+        string,
+        unknown
+      >;
       expect(saved.opacity).toBe(0.5);
     });
 
     it("loads settings from localStorage", () => {
-      localStorage.setItem(
-        "desktop-pet-settings",
-        JSON.stringify({ modelName: "gpt-4-turbo" }),
-      );
+      localStorage.setItem("desktop-pet-settings", JSON.stringify({ modelName: "gpt-4-turbo" }));
       usePetStore.getState().loadSettings();
       expect(usePetStore.getState().settings.modelName).toBe("gpt-4-turbo");
     });

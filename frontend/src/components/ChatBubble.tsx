@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
 import type React from "react";
 
+import ReactMarkdown from "react-markdown";
+
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import {
-  Message,
-  MessageContent,
-  MessageFooter,
-} from "@/components/ui/message";
+import { Message, MessageContent, MessageFooter } from "@/components/ui/message";
 import {
   MessageScroller,
   MessageScrollerProvider,
@@ -36,21 +33,28 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
     return null;
   })();
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- sync typing index when new assistant message arrives
+  // 同步打字机索引到最新助手消息（使用 setTimeout 避免同步 setState）
   useEffect(() => {
-    if (latestAssistantIndex !== typingIndex) {
+    const id = setTimeout(() => {
       setTypingIndex(latestAssistantIndex);
       setVisibleChars(0);
-    }
-  }, [latestAssistantIndex, typingIndex]);
+    }, 0);
+    return () => {
+      clearTimeout(id);
+    };
+  }, [latestAssistantIndex]);
 
   useEffect(() => {
     if (typingIndex === null) return;
     const msg = messages[typingIndex];
     if (!msg) return;
     if (visibleChars < msg.content.length) {
-      const timer = setTimeout(() => { setVisibleChars((p) => p + 1); }, TYPEWRITER_SPEED_MS);
-      return () => { clearTimeout(timer); };
+      const timer = setTimeout(() => {
+        setVisibleChars((p) => p + 1);
+      }, TYPEWRITER_SPEED_MS);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   }, [typingIndex, visibleChars, messages]);
 
@@ -86,7 +90,10 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
                 return (
                   <Message key={msg.id} align={isUser ? "end" : "start"}>
                     <MessageContent>
-                      <Bubble variant={isUser ? "default" : "secondary"} align={isUser ? "end" : "start"}>
+                      <Bubble
+                        variant={isUser ? "default" : "secondary"}
+                        align={isUser ? "end" : "start"}
+                      >
                         <BubbleContent className={isUser ? "" : "bg-secondary/80"}>
                           {isUser ? (
                             <p className="text-sm">{displayContent}</p>
@@ -96,7 +103,9 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
                             </div>
                           )}
                           {isTyping && (
-                            <span className="inline-block ml-0.5 font-bold text-foreground/60 animate-blink">|</span>
+                            <span className="inline-block ml-0.5 font-bold text-foreground/60 animate-blink">
+                              |
+                            </span>
                           )}
                         </BubbleContent>
                       </Bubble>
@@ -124,7 +133,9 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
           type="text"
           placeholder="输入消息..."
           value={inputText}
-          onChange={(e): void => { setInputText(e.target.value); }}
+          onChange={(e): void => {
+            setInputText(e.target.value);
+          }}
         />
         <button
           className="shrink-0 h-auto min-h-0 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium cursor-pointer border-none transition-all duration-150 hover:opacity-90 active:scale-95"

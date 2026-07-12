@@ -1,4 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { usePetEvent } from "../hooks/usePet";
+import { sendMessage } from "../lib/bridge";
+import { generateId, usePetStore } from "../stores/petStore";
 
 // ---- Mocks (hoisted by Vitest) ----
 
@@ -37,18 +42,13 @@ vi.mock("@tauri-apps/api/core", () => ({
 let capturedHandler: ((e: { payload: import("../lib/bridge").PetEvent }) => void) | null = null;
 
 vi.mock("@tauri-apps/api/event", () => ({
-  listen: vi.fn((_event: string, handler: (e: { payload: import("../lib/bridge").PetEvent }) => void) => {
-    capturedHandler = handler;
-    return Promise.resolve(vi.fn());
-  }),
+  listen: vi.fn(
+    (_event: string, handler: (e: { payload: import("../lib/bridge").PetEvent }) => void) => {
+      capturedHandler = handler;
+      return Promise.resolve(vi.fn());
+    },
+  ),
 }));
-
-/* eslint-disable import/first */
-import { act, renderHook } from "@testing-library/react";
-import { usePetEvent } from "../hooks/usePet";
-import { sendMessage } from "../lib/bridge";
-import { generateId, usePetStore } from "../stores/petStore";
-/* eslint-enable import/first */
 
 // A dummy app reference (just an object that passes truthiness check)
 const dummyApp = { __live2dModel: { internalModel: {} } };
@@ -95,7 +95,9 @@ describe("live2dApp store field", () => {
 describe("usePetEvent — Live2D animation triggers", () => {
   it("triggers FlickHead + f01 on speaking state", () => {
     usePetStore.getState().setLive2dApp(dummyApp);
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("state.changed", { state: "speaking" });
@@ -107,7 +109,9 @@ describe("usePetEvent — Live2D animation triggers", () => {
 
   it("triggers TapBody on attention state", () => {
     usePetStore.getState().setLive2dApp(dummyApp);
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("state.changed", { state: "attention" });
@@ -118,7 +122,9 @@ describe("usePetEvent — Live2D animation triggers", () => {
 
   it("triggers Pinch on interaction state", () => {
     usePetStore.getState().setLive2dApp(dummyApp);
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("state.changed", { state: "interaction" });
@@ -128,7 +134,9 @@ describe("usePetEvent — Live2D animation triggers", () => {
   });
 
   it("does NOT trigger animations when live2dApp is null", () => {
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("state.changed", { state: "speaking" });
@@ -140,7 +148,9 @@ describe("usePetEvent — Live2D animation triggers", () => {
 
   it("triggers thinking expression on agent.thinking (status=true)", () => {
     usePetStore.getState().setLive2dApp(dummyApp);
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("agent.thinking", { status: true });
@@ -153,7 +163,9 @@ describe("usePetEvent — Live2D animation triggers", () => {
   it("returns to idle on agent.thinking (status=false)", () => {
     usePetStore.getState().setLive2dApp(dummyApp);
     usePetStore.setState({ petState: "attention" });
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("agent.thinking", { status: false });
@@ -164,7 +176,9 @@ describe("usePetEvent — Live2D animation triggers", () => {
 
   it("triggers speaking animation on agent.reply event", () => {
     usePetStore.getState().setLive2dApp(dummyApp);
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("agent.reply", { text: "hello", done: false });
@@ -177,7 +191,9 @@ describe("usePetEvent — Live2D animation triggers", () => {
 
   it("triggers speaking animation on pet.speak event", () => {
     usePetStore.getState().setLive2dApp(dummyApp);
-    renderHook(() => { usePetEvent(); });
+    renderHook(() => {
+      usePetEvent();
+    });
 
     act(() => {
       firePetEvent("pet.speak", { text: "woof!" });
