@@ -47,6 +47,19 @@ pre-commit:
       run: pnpm format:check
       stage_fixed: false
 
+    # ----- 前端 lockfile 一致性 -----
+    pnpm-lockfile-check:
+      root: "frontend/"
+      glob: "package.json"
+      run: |-
+        if ! echo "{staged_files}" | grep -q 'pnpm-lock.yaml'; then
+          echo "❌ package.json 已修改但 pnpm-lock.yaml 未更新！"
+          echo "   请在 frontend/ 下运行: pnpm install"
+          echo "   然后重新 git add pnpm-lock.yaml"
+          exit 1
+        fi
+      description: "检查 pnpm-lock.yaml 与 package.json 是否同步"
+
     # ----- 通用 -----
     check-merge-conflict:
       glob: "*"
