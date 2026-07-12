@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 
-import { type PetEvent, onPetEvent, sendMessage } from "@/lib/bridge";
+import { type PetEvent, onPetEvent, sendMessage, updateConfig } from "@/lib/bridge";
 import { generateId, usePetStore } from "@/stores/petStore";
 import type { Message, Settings } from "@/stores/petStore";
 
@@ -14,8 +14,39 @@ export function usePetEvent(): void {
 
   useEffect(() => {
     const unlistenPromise = onPetEvent((event: PetEvent) => {
-      // 更新状态
-      setPetState(event.kind as Parameters<typeof setPetState>[0]);
+      // 将事件种类映射为宠物可视化状态
+      switch (event.kind) {
+        case "state.changed":
+          // 从 data.state 提取实际 FSM 状态（idle / attention / interaction / speaking）
+          if (typeof event.data.state === "string") {
+            setPetState(event.data.state as Parameters<typeof setPetState>[0]);
+          }
+          break;
+        case "agent.thinking":
+          // 思考中 → 关注状态
+          setPetState(event.data.status === true ? "attention" : "idle");
+          break;
+        case "agent.reply":
+        case "pet.speak":
+          // 回复/说话 → 说话状态
+          setPetState("speaking");
+          break;
+        case "error":
+          // 出错回到待机，并显示错误消息
+          setPetState("idle");
+          if (typeof event.data.error === "string") {
+            addMessage({
+              id: generateId(),
+              role: "system",
+              content: "⚠️ " + event.data.error,
+              timestamp: Date.now(),
+            });
+          }
+          break;
+        default:
+          // 其他事件不修改状态
+          break;
+      }
 
       // 处理消息事件
       if (event.kind === "agent.reply" && typeof event.data.text === "string") {
@@ -96,7 +127,18 @@ export function useSettings(): {
   const toggleSettings = usePetStore((s) => s.toggleSettings);
 
   const handleSave = useCallback(() => {
+    // 保存到 localStorage
     saveSettings();
+
+    // 将 LLM 设置同步到 PetCore 后端
+    const s = usePetStore.getState().settings;
+    void updateConfig({
+      apiKey: s.apiKey,
+      baseUrl: s.baseUrl,
+      modelName: s.modelName,
+      systemPrompt: s.persona,
+    });
+
     toggleSettings();
   }, [saveSettings, toggleSettings]);
 

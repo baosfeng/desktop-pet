@@ -86,7 +86,7 @@ export default function App(): React.JSX.Element {
         {/* 草地装饰 */}
         <div className="w-[140px] h-[16px] bg-gradient-to-r from-green-light/40 via-primary/30 to-green-light/40 rounded-full mt-1" />
         <div className="text-[11px] text-text-brown/50 mt-1 font-display">
-          {petState === "idle" ? "晒太阳中~" : petState === "interaction" ? "看着你呢~" : "在想什么呢？"}
+          {petState === "idle" ? "晒太阳中~" : petState === "attention" ? "看着你呢~" : petState === "interaction" ? "摸摸我吧~" : petState === "speaking" ? "正在说话..." : "在想什么呢？"}
         </div>
       </div>
 

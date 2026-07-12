@@ -9,7 +9,6 @@
 // so use _e/_status prefix to avoid false positives.
 #![allow(clippy::used_underscore_binding)]
 
-
 use std::sync::Mutex;
 
 use log::{error, info, warn};
