@@ -67,19 +67,25 @@ func (e *Engine) Run(ctx context.Context) error {
 	}
 
 	// 发送启动事件
-	_ = e.sink.Send(event.Event{
+	if err := e.sink.Send(event.Event{
 		Kind: event.EventStateChanged,
 		Data: map[string]any{"state": string(e.fsm.Current())},
 		Meta: event.NewMeta("core", ""),
-	})
+	}); err != nil {
+		e.log.Error("engine: send startup event failed", "error", err)
+	}
 
 	// 主事件循环（骨架）
 	// TODO: Phase 2 — 实现完整的事件循环（接收 stdin 命令、定时任务等）
 	<-ctx.Done()
 
 	// 清理
-	_ = e.plugin.StopAll()
-	_ = e.sink.Close()
+	if err := e.plugin.StopAll(); err != nil {
+		e.log.Error("engine: plugin stop failed", "error", err)
+	}
+	if err := e.sink.Close(); err != nil {
+		e.log.Error("engine: sink close failed", "error", err)
+	}
 
 	return nil
 }
@@ -97,11 +103,13 @@ func (e *Engine) HandleInput(ctx context.Context, text string) error {
 	}
 
 	// 发送状态变更事件
-	_ = e.sink.Send(event.Event{
+	if err := e.sink.Send(event.Event{
 		Kind: event.EventStateChanged,
 		Data: map[string]any{"state": string(e.fsm.Current())},
 		Meta: event.NewMeta("core", ""),
-	})
+	}); err != nil {
+		e.log.Error("engine: send state change event failed", "error", err)
+	}
 
 	// 委托给 Agent 处理
 	return e.agent.Run(ctx, agent.Request{
@@ -120,11 +128,14 @@ func (e *Engine) GetStatus() map[string]any {
 }
 
 // SetSink 设置引擎的事件消费者，用于 sidecar 模式下替换默认 sink。
+// 同步设置 Agent 的 sink，确保 Agent Pipeline 发出的事件（agent.reply 等）
+// 也能通过同一个 sink 发送出去。
 func (e *Engine) SetSink(sink event.Sink) {
 	if sink == nil {
 		return
 	}
 	e.sink = sink
+	e.agent.SetSink(sink)
 }
 
 // UpdateLLMConfig 热更新 LLM Provider 配置（Provider / API Key / Base URL / Model / System Prompt）。
