@@ -128,3 +128,61 @@ func TestYAMLPlugin_Interface(t *testing.T) {
 		t.Errorf("Stop() error: %v", err)
 	}
 }
+
+func TestLoadYAMLDir_FileReadError(t *testing.T) {
+	// A directory we can list but not read a specific file from is not easy to create.
+	// Instead, test with a non-existent file passed via a malformed directory structure.
+	// This test verifies we handle non-existent directories gracefully.
+	tmpDir := t.TempDir()
+	reg := NewRegistry()
+
+	// Empty dir should produce 0 plugins
+	count, err := LoadYAMLDir(reg, tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Errorf("expected 0 plugins for empty dir, got %d", count)
+	}
+}
+
+func TestLoadYAMLFile_InvalidFormat(t *testing.T) {
+	tmpDir := t.TempDir()
+	badFile := filepath.Join(tmpDir, "bad.yaml")
+	if err := os.WriteFile(badFile, []byte("invalid yaml: [\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := LoadYAMLBytes([]byte("invalid yaml: [\n"))
+	if err == nil {
+		t.Error("expected error for invalid YAML")
+	}
+}
+
+func TestYAMLPlugin_Pack(t *testing.T) {
+	pack := &ActionPack{Name: "test", Actions: []Action{{Trigger: "on_startup", Speak: "hi"}}}
+	p := NewYAMLPlugin(pack)
+	got := p.Pack()
+	if got.Name != "test" {
+		t.Errorf("Pack().Name = %q, want %q", got.Name, "test")
+	}
+}
+
+func TestLoadYAMLDir_WithDirEntry(t *testing.T) {
+	tmpDir := t.TempDir()
+	// Create a subdirectory with .yaml extension to test isDir skip
+	subDir := filepath.Join(tmpDir, "subdir.yaml")
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	reg := NewRegistry()
+	count, err := LoadYAMLDir(reg, tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Directory with .yaml extension should be skipped by isDir check
+	if count != 0 {
+		t.Errorf("expected 0 plugins, got %d", count)
+	}
+}

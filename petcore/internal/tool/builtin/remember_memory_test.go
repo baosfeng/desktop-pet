@@ -57,3 +57,27 @@ func TestRememberTool_WithMemory_NilManager(t *testing.T) {
 		t.Error("expected non-empty result")
 	}
 }
+
+func TestTimestamp_WithEnvVar(t *testing.T) {
+	t.Setenv("MOCK_NOW_MS", "1234567890")
+	ts := timestamp()
+	if ts != 1234567890 {
+		t.Errorf("timestamp() = %d, want %d", ts, 1234567890)
+	}
+}
+
+func TestTimestamp_WithoutEnvVar(t *testing.T) {
+	t.Setenv("MOCK_NOW_MS", "")
+	ts := timestamp()
+	if ts != 0 {
+		t.Errorf("timestamp() = %d, want 0", ts)
+	}
+}
+
+func TestTimestamp_InvalidEnvVar(t *testing.T) {
+	t.Setenv("MOCK_NOW_MS", "not-a-number")
+	ts := timestamp()
+	if ts != 0 {
+		t.Errorf("timestamp() with invalid = %d, want 0", ts)
+	}
+}

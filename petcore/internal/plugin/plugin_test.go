@@ -112,3 +112,34 @@ func TestRegistry_StartAll_StopAll(t *testing.T) {
 func TestRegistryInterface(_ *testing.T) {
 	var _ Registry = (*builtinRegistry)(nil)
 }
+
+func TestMockPlugin_Type(t *testing.T) {
+	p := &MockPlugin{
+		MockName: "test",
+		MockType: TypeL1YAML,
+	}
+	if p.Type() != TypeL1YAML {
+		t.Errorf("Type() = %v, want %v", p.Type(), TypeL1YAML)
+	}
+}
+
+func TestMockPlugin_StartWithNilOnStart(t *testing.T) {
+	p := &MockPlugin{
+		MockName: "test2",
+		MockType: TypeL2JS,
+		OnStart: nil,
+	}
+	if err := p.Start(context.Background()); err != nil {
+		t.Errorf("Start() error: %v", err)
+	}
+}
+
+func TestMockPlugin_StopWithNilOnStop(t *testing.T) {
+	p := &MockPlugin{
+		MockName: "test3",
+		OnStop: nil,
+	}
+	if err := p.Stop(); err != nil {
+		t.Errorf("Stop() error: %v", err)
+	}
+}

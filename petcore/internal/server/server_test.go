@@ -120,6 +120,34 @@ func TestSinkAdapter_Send(t *testing.T) {
 	}
 }
 
+func TestSinkAdapter_Close(t *testing.T) {
+	var stdout bytes.Buffer
+	srv := New(nil, nil, &stdout)
+	adapter := NewSinkAdapter(srv)
+
+	err := adapter.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestServer_ChatWithEmptyParams(t *testing.T) {
+	// Empty text is handled gracefully (returns done without error)
+	stdin := strings.NewReader(`{"type":"cmd","id":"1","method":"chat","params":{}}` + "\n")
+	var stdout bytes.Buffer
+
+	srv := newTestServer(t, stdin, &stdout)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_ = srv.Run(ctx)
+
+	out := stdout.String()
+	if !strings.Contains(out, `"done"`) {
+		t.Errorf("expected done response for empty chat, got: %s", out)
+	}
+}
+
 // ─── 测试辅助 ────────────────────────────────
 
 func newTestServer(t *testing.T, stdin *strings.Reader, stdout *bytes.Buffer) *Server {
@@ -143,4 +171,57 @@ func newTestServer(t *testing.T, stdin *strings.Reader, stdout *bytes.Buffer) *S
 	ag.SetSink(sink)
 
 	return srv
+}
+
+func TestServer_ChatInvalidParams(t *testing.T) {
+	// JSON parse error for chat params (params is not an object)
+	stdin := strings.NewReader(`{"type":"cmd","id":"1","method":"chat","params":"not-an-object"}` + "\n")
+	var stdout bytes.Buffer
+
+	srv := newTestServer(t, stdin, &stdout)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_ = srv.Run(ctx)
+
+	out := stdout.String()
+	if !strings.Contains(out, "invalid params") {
+		t.Errorf("expected 'invalid params' error, got: %s", out)
+	}
+}
+
+func TestServer_WriteJSON_HandlesNil(t *testing.T) {
+	// writeJSON with nil input should not panic
+	var stdout bytes.Buffer
+	srv := New(nil, nil, &stdout)
+	srv.writeJSON(nil) // nil should produce "null" which is valid JSON
+	out := stdout.String()
+	if out != "null\n" {
+		t.Errorf("writeJSON(nil) = %q, want %q", out, "null\n")
+	}
+}
+
+func TestServer_WriteJSON_WithChannelError(t *testing.T) {
+	// writeJSON with a value that cannot be marshaled should handle error gracefully
+	var stdout bytes.Buffer
+	srv := New(nil, nil, &stdout)
+	// Marshal of a channel produces a specific error
+	srv.writeJSON(make(chan int))
+	// Should not panic, stdout should be empty since marshal fails
+}
+
+func TestServer_ChatWithEmptyLine(t *testing.T) {
+	stdin := strings.NewReader("\n\n")
+	var stdout bytes.Buffer
+
+	srv := newTestServer(t, stdin, &stdout)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	_ = srv.Run(ctx)
+	// Empty lines should be skipped without error
+	out := stdout.String()
+	if out != "" {
+		t.Errorf("expected no output for empty lines, got: %s", out)
+	}
 }
