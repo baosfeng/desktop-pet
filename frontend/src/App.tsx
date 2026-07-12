@@ -59,53 +59,53 @@ export default function App(): React.JSX.Element {
   }, []);
 
   return (
-    <div
-      className="relative w-full h-full flex flex-col items-center bg-transparent overflow-hidden select-none"
-      data-state={petState}
-    >
+    <div className="relative w-full h-full flex flex-col bg-transparent overflow-hidden select-none">
       {/* 顶部花草装饰 */}
-      <div className="text-center text-lg pt-3 text-primary/60 select-none pointer-events-none">
+      <div className="text-center text-lg pt-2 text-primary/60 select-none pointer-events-none shrink-0">
         🌿 🌻 🌱
       </div>
 
-      {/* 宠物区域 */}
-      <div className="flex-1 flex flex-col items-center justify-center w-full">
-        <div className="relative w-[120px] h-[120px] flex items-center justify-center">
-          <canvas id="live2d-canvas" className="w-full h-full block" />
-          {!live2dReady && !live2dError && (
-            <div className="absolute inset-0 flex items-center justify-center text-text-brown/50 text-[12px]">
-              🐾 加载中...
-            </div>
-          )}
-          {live2dError && (
-            <div className="absolute inset-0 flex items-center justify-center text-text-brown/60 text-[11px] px-2 text-center">
-              🐾 {live2dError}
-            </div>
-          )}
+      {/* 中间区域：宠物 + 聊天，自动分配空间 */}
+      <div className="flex-1 flex flex-col min-h-0 w-full">
+        {/* 宠物区域 */}
+        <div className="flex flex-col items-center justify-center shrink-0 py-1">
+          <div className="relative w-[35%] max-w-[160px] aspect-square flex items-center justify-center">
+            <canvas id="live2d-canvas" className="w-full h-full block" />
+            {!live2dReady && !live2dError && (
+              <div className="absolute inset-0 flex items-center justify-center text-text-brown/50 text-xs">
+                🐾 加载中...
+              </div>
+            )}
+            {live2dError && (
+              <div className="absolute inset-0 flex items-center justify-center text-text-brown/60 text-xs px-2 text-center">
+                🐾 {live2dError}
+              </div>
+            )}
+          </div>
+          {/* 草地装饰 */}
+          <div className="w-[35%] max-w-[180px] h-3 bg-gradient-to-r from-green-light/40 via-primary/30 to-green-light/40 rounded-full mt-0.5" />
+          <div className="text-xs text-text-brown/50 mt-0.5 font-display">
+            {petState === "idle" ? "晒太阳中~" : petState === "attention" ? "看着你呢~" : petState === "interaction" ? "摸摸我吧~" : petState === "speaking" ? "正在说话..." : "在想什么呢？"}
+          </div>
         </div>
-        {/* 草地装饰 */}
-        <div className="w-[140px] h-[16px] bg-gradient-to-r from-green-light/40 via-primary/30 to-green-light/40 rounded-full mt-1" />
-        <div className="text-[11px] text-text-brown/50 mt-1 font-display">
-          {petState === "idle" ? "晒太阳中~" : petState === "attention" ? "看着你呢~" : petState === "interaction" ? "摸摸我吧~" : petState === "speaking" ? "正在说话..." : "在想什么呢？"}
-        </div>
-      </div>
 
-      {/* 聊天气泡 */}
-      <div className="w-full px-3 pb-2">
-        <ChatBubble messages={messages} onSendMessage={sendMessage} />
+        {/* 聊天区域 */}
+        <div className="flex-1 min-h-0 px-3 pb-1.5">
+          <ChatBubble messages={messages} onSendMessage={sendMessage} />
+        </div>
       </div>
 
       {/* 底部操作栏 */}
-      <div className="flex gap-2 justify-center pb-3">
+      <div className="flex gap-3 justify-center pb-2 shrink-0">
         <button
-          className="flex items-center gap-1 px-3 py-1.5 rounded-[8px] bg-primary text-primary-content text-[12px] font-medium cursor-pointer border-none transition-all duration-150 hover:scale-105 active:scale-95"
+          className="btn btn-primary btn-sm flex items-center gap-1.5 min-h-0 h-auto px-4 py-2 text-sm"
           onClick={toggleSettings}
           type="button"
         >
           ⚙️ 设置
         </button>
         <button
-          className="flex items-center gap-1 px-3 py-1.5 rounded-[8px] bg-accent text-accent-content text-[12px] font-medium cursor-pointer border-none transition-all duration-150 hover:scale-105 active:scale-95"
+          className="btn btn-accent btn-sm flex items-center gap-1.5 min-h-0 h-auto px-4 py-2 text-sm"
           onClick={(): void => {
             // TODO: 互动功能
           }}
