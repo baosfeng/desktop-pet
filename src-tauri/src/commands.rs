@@ -109,6 +109,24 @@ pub fn update_config(app_handle: AppHandle, config: serde_json::Value) -> tauri:
     Ok(())
 }
 
+/// 验证 API Key 是否有效
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
+pub fn verify_api_key(app_handle: AppHandle, config: serde_json::Value) -> tauri::Result<()> {
+    if let Some(writer) = app_handle.try_state::<crate::sidecar::SidecarWriter>() {
+        let cmd = serde_json::json!({
+            "type": "cmd",
+            "id": format!("verify-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()),
+            "method": "verify_api_key",
+            "params": config
+        });
+        writer.send(&cmd.to_string());
+    } else {
+        log::error!("verify_api_key dropped: SidecarWriter not registered");
+    }
+    Ok(())
+}
+
 /// 从前端接收日志（调试用）
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]
