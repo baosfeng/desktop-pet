@@ -66,7 +66,7 @@ type mockProvider struct {
 	name string
 }
 
-func (m *mockProvider) Name() string { return m.name }
+func (m *mockProvider) Name() string  { return m.name }
 func (m *mockProvider) Model() string { return "test" }
 func (m *mockProvider) Stream(_ context.Context, _ Request) (<-chan Chunk, error) {
 	ch := make(chan Chunk, 1)

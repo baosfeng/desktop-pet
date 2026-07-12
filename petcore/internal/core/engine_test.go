@@ -133,6 +133,7 @@ func TestEngine_HandleInput_WithStateTransition(t *testing.T) {
 			data, ok := e.Data.(map[string]any)
 			if ok && data["state"] != nil {
 				// OK — state transition happened
+				_ = data["state"]
 			}
 		}
 	case <-ctx.Done():

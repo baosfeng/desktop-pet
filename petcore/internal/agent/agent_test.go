@@ -158,7 +158,7 @@ func TestPipelineCtx_Messages(t *testing.T) {
 	}
 }
 
-func TestAgent_SetSink_Nil(t *testing.T) {
+func TestAgent_SetSink_Nil(_ *testing.T) {
 	provider, _ := llm.NewProvider("mock", nil)
 	a := New(provider)
 	// SetSink with nil should not panic

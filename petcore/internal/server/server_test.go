@@ -201,7 +201,7 @@ func TestServer_WriteJSON_HandlesNil(t *testing.T) {
 	}
 }
 
-func TestServer_WriteJSON_WithChannelError(t *testing.T) {
+func TestServer_WriteJSON_WithChannelError(_ *testing.T) {
 	// writeJSON with a value that cannot be marshaled should handle error gracefully
 	var stdout bytes.Buffer
 	srv := New(nil, nil, &stdout)

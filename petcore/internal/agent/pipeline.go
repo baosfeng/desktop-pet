@@ -71,7 +71,7 @@ func (s *PreProcessStage) Process(ctx context.Context, pCtx *pipelineCtx, next S
 	return next(ctx, pCtx)
 }
 
-func hasToolCalls(msg llm.Message) bool {
+func hasToolCalls(_ llm.Message) bool {
 	return false // Placeholder: Phase 4+ tool call message tracking
 }
 
@@ -133,6 +133,8 @@ type LLMCallStage struct {
 func (s *LLMCallStage) Name() string { return "LLMCall" }
 
 // Process 调用 LLM Provider，处理流式回复和工具调用循环。
+//
+//nolint:cyclop
 func (s *LLMCallStage) Process(ctx context.Context, pCtx *pipelineCtx, next StageFunc) error {
 	maxTurns := 10
 	enableToolLoop := s.flags != nil && s.flags.IsEnabled(feature.FlagToolLoop)
