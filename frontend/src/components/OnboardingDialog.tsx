@@ -34,7 +34,7 @@ export function OnboardingDialog(): React.JSX.Element {
   const toggleSettings = usePetStore((s) => s.toggleSettings);
   const showSettings = usePetStore((s) => s.showSettings);
 
-  const currentStep = STEPS[step] ?? STEPS[0]!;
+  const currentStep: (typeof STEPS)[number] = STEPS[step] ?? STEPS[0];
   const isLastStep = step >= STEPS.length - 1;
 
   const handleNext = useCallback(() => {
@@ -55,7 +55,7 @@ export function OnboardingDialog(): React.JSX.Element {
   }, [showSettings, toggleSettings, updateSettings, saveSettings]);
 
   return (
-    <Dialog open onOpenChange={() => {}}>
+    <Dialog open onOpenChange={undefined}>
       <DialogContent className="sm:max-w-[380px] p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-lg font-display font-bold text-center">

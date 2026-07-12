@@ -76,6 +76,19 @@ jobs:
         with:
           tool: cargo-audit
 
+      # Rust 的 lint/test/build 需要 Go sidecar 二进制
+      - name: Setup Go for Rust sidecar
+        if: matrix.lang.name == 'Rust'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build Go sidecar
+        if: matrix.lang.name == 'Rust'
+        run: |
+          cd petcore
+          CGO_ENABLED=0 go build -o ../src-tauri/binaries/petcore-x86_64-unknown-linux-gnu ./cmd/petcore/
+
       - name: Setup Node
         if: matrix.lang.name == 'Frontend'
         uses: actions/setup-node@v6
@@ -143,6 +156,18 @@ jobs:
       - name: Setup Rust
         if: matrix.lang.name == 'Rust'
         uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Setup Go
+        if: matrix.lang.name == 'Rust'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build Go sidecar
+        if: matrix.lang.name == 'Rust'
+        run: |
+          cd petcore
+          CGO_ENABLED=0 go build -o ../src-tauri/binaries/petcore-x86_64-unknown-linux-gnu ./cmd/petcore/
 
       - name: Setup Node
         if: matrix.lang.name == 'Frontend'

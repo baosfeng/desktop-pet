@@ -139,7 +139,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
   const handleSave = useCallback(() => {
     updateSettings(form);
     saveSettings();
-    usePetStore.getState().saveApiKey();
+    void usePetStore.getState().saveApiKey();
     void updateConfig({
       apiKey: form.apiKey,
       provider: form.provider,

@@ -17,9 +17,7 @@ const API_KEY_KEY = "apiKey";
 let storePromise: Promise<Store> | null = null;
 
 function getStore(): Promise<Store> {
-  if (storePromise === null) {
-    storePromise = Store.load(STORE_FILE);
-  }
+  storePromise ??= Store.load(STORE_FILE);
   return storePromise;
 }
 
