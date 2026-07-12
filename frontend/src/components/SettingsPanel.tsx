@@ -1,11 +1,63 @@
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
 import type React from "react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
 import { usePetStore } from "@/stores/petStore";
 import { updateConfig } from "@/lib/bridge";
 
-/* ─── Provider 预设配置 ────────────────────── */
+/* ─── API Key 验证 ──────────────────────────── */
+
+type VerifyStatus = "idle" | "verifying" | "success" | "error";
+
+async function verifyApiKey(
+  baseUrl: string,
+  apiKey: string,
+  modelName: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 1,
+      }),
+    });
+
+    if (res.ok) return { ok: true };
+
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, message: "API Key 无效或已过期" };
+    }
+
+    const body = await res.json().catch(() => null);
+    const detail = body?.error?.message ?? body?.message ?? `HTTP ${String(res.status)}`;
+    return { ok: false, message: detail };
+  } catch (err: unknown) {
+    const msg = err instanceof TypeError ? "无法连接到服务器，请检查网络或接口地址" : String(err);
+    return { ok: false, message: msg };
+  }
+}
+
+/* ─── Provider 配置 ──────────────────────────── */
 
 interface ModelOption {
   id: string;
@@ -25,8 +77,8 @@ const PROVIDERS: ProviderOption[] = [
     label: "DeepSeek",
     baseUrl: "https://api.deepseek.com/v1",
     models: [
-      { id: "deepseek-chat", label: "DeepSeek Chat (V3)" },
-      { id: "deepseek-reasoner", label: "DeepSeek Reasoner (R1)" },
+      { id: "deepseek-v4-flash", label: "V4 Flash（默认）" },
+      { id: "deepseek-v4-pro", label: "V4 Pro（思考）" },
     ],
   },
   {
@@ -36,7 +88,6 @@ const PROVIDERS: ProviderOption[] = [
     models: [
       { id: "gpt-4o-mini", label: "GPT-4o Mini" },
       { id: "gpt-4o", label: "GPT-4o" },
-      { id: "gpt-4-turbo", label: "GPT-4 Turbo" },
     ],
   },
   {
@@ -57,20 +108,9 @@ const PROVIDERS: ProviderOption[] = [
     models: [
       { id: "llama3.2", label: "Llama 3.2" },
       { id: "qwen2.5", label: "Qwen 2.5" },
-      { id: "mistral", label: "Mistral" },
     ],
   },
 ];
-
-/* ─── 通用样式 ──────────────────────────────── */
-
-const inputClass =
-  "w-full px-3 py-2 border border-soft-brown/40 rounded-[8px] bg-cream text-text-brown text-[13px] outline-none focus:border-primary/60 transition-colors placeholder:text-text-brown/30 font-sans";
-
-const selectClass =
-  "w-full px-3 py-2 border border-soft-brown/40 rounded-[8px] bg-cream text-text-brown text-[13px] outline-none focus:border-primary/60 transition-colors font-sans appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
-
-const labelClass = "text-[12px] font-medium text-accent uppercase tracking-[0.5px]";
 
 /* ─── 组件 ──────────────────────────────────── */
 
@@ -84,8 +124,8 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
   const saveSettings = usePetStore((s) => s.saveSettings);
 
   const [form, setForm] = useState({ ...storeSettings });
+  const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>("idle");
 
-  // 根据当前 form.provider 查找 ProviderOption（必定存在，因为下拉选项与 PROVIDERS 一致）
   const currentProvider = (PROVIDERS.find((p) => p.id === form.provider) ?? PROVIDERS[0]) as ProviderOption;
 
   const handleChange = useCallback(
@@ -95,10 +135,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
     [],
   );
 
-  // 切换 Provider 时自动更新 baseUrl 和 modelName
   const handleProviderChange = useCallback(
-    (providerId: string) => {
-      const provider = PROVIDERS.find((p) => p.id === providerId);
+    (value: string) => {
+      const provider = PROVIDERS.find((p) => p.id === value);
       if (!provider) return;
       setForm((prev) => ({
         ...prev,
@@ -110,19 +149,26 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
     [],
   );
 
+  const handleVerify = useCallback(async () => {
+    if (!form.apiKey) {
+      setVerifyStatus("error");
+      return;
+    }
+    setVerifyStatus("verifying");
+    const result = await verifyApiKey(form.baseUrl, form.apiKey, form.modelName);
+    setVerifyStatus(result.ok ? "success" : "error");
+  }, [form]);
+
   const handleSave = useCallback(() => {
     updateSettings(form);
     saveSettings();
-
-    const llmConfig = {
+    void updateConfig({
       apiKey: form.apiKey,
       provider: form.provider,
       baseUrl: form.baseUrl,
       modelName: form.modelName,
       systemPrompt: form.persona,
-    };
-    void updateConfig(llmConfig);
-
+    });
     onClose();
   }, [form, updateSettings, saveSettings, onClose]);
 
@@ -131,129 +177,154 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
     onClose();
   }, [storeSettings, onClose]);
 
-  return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-200 flex items-center justify-center bg-black/20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <motion.div
-          className="w-[340px] max-h-[80vh] overflow-y-auto p-6 rounded-[24px] bg-cream border border-soft-brown/40 shadow-xl"
-          initial={{ opacity: 0, scale: 0.95, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 8 }}
-          transition={{ duration: 0.2 }}
-        >
-          <h2 className="font-display text-[20px] font-bold text-text-brown mb-5">⚙️ 设置</h2>
+  const canSave = !form.apiKey || verifyStatus === "success";
 
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) handleClose(); }}>
+      <DialogContent className="sm:max-w-[420px] p-0 gap-0 max-h-[85vh] overflow-hidden">
+        <DialogHeader className="px-6 pt-5 pb-2">
+          <DialogTitle className="text-xl font-display font-bold">⚙️ 设置</DialogTitle>
+        </DialogHeader>
+
+        <div className="overflow-y-auto px-6 pb-6 space-y-4">
           {/* API Key */}
-          <label className="flex flex-col gap-1 mb-4">
-            <span className={labelClass}>API Key</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-accent uppercase tracking-wider">API Key</label>
+              <button
+                className={`text-[11px] px-2.5 py-1 rounded-md border-none cursor-pointer font-medium transition-all
+                  ${verifyStatus === "idle" ? "bg-accent/15 text-accent hover:bg-accent/25" : ""}
+                  ${verifyStatus === "verifying" ? "bg-muted text-muted-foreground cursor-wait" : ""}
+                  ${verifyStatus === "success" ? "bg-green-100 text-green-700" : ""}
+                  ${verifyStatus === "error" ? "bg-red-100 text-red-600" : ""}`}
+                onClick={verifyStatus === "verifying" ? undefined : handleVerify}
+                type="button"
+                disabled={verifyStatus === "verifying"}
+              >
+                {verifyStatus === "idle" && "🔍 验证"}
+                {verifyStatus === "verifying" && "⏳ 验证中..."}
+                {verifyStatus === "success" && "✅ 已验证"}
+                {verifyStatus === "error" && "🔄 重试"}
+              </button>
+            </div>
             <input
-              className={inputClass}
+              className="w-full h-auto px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all"
               type="password"
               placeholder="sk-..."
               value={form.apiKey}
-              onChange={(e): void => { handleChange("apiKey", e.target.value); }}
+              onChange={(e): void => {
+                handleChange("apiKey", e.target.value);
+                setVerifyStatus("idle");
+              }}
             />
-          </label>
+            {verifyStatus === "error" && !form.apiKey && (
+              <p className="text-xs text-destructive mt-0.5">请先输入 API Key</p>
+            )}
+          </div>
 
           {/* Provider */}
-          <label className="flex flex-col gap-1 mb-4">
-            <span className={labelClass}>服务商</span>
-            <select
-              className={selectClass}
-              value={form.provider}
-              onChange={(e): void => { handleProviderChange(e.target.value); }}
-            >
-              {PROVIDERS.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
-              ))}
-            </select>
-          </label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">服务商</label>
+            <Select value={form.provider} onValueChange={(v) => { if (v) handleProviderChange(v); }}>
+              <SelectTrigger className="w-full h-auto px-3 py-2 rounded-lg text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PROVIDERS.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Model */}
-          <label className="flex flex-col gap-1 mb-4">
-            <span className={labelClass}>模型</span>
-            <select
-              className={selectClass}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">模型</label>
+            <Select
               value={form.modelName}
-              onChange={(e): void => { handleChange("modelName", e.target.value); }}
+              onValueChange={(v) => { if (v) handleChange("modelName", v); }}
             >
-              {currentProvider.models.map((m) => (
-                <option key={m.id} value={m.id}>{m.label}</option>
-              ))}
-            </select>
-          </label>
+              <SelectTrigger className="w-full h-auto px-3 py-2 rounded-lg text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {currentProvider.models.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Base URL（只读展示，不可编辑） */}
-          <label className="flex flex-col gap-1 mb-4">
-            <span className={labelClass}>接口地址</span>
+          {/* Base URL */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">接口地址</label>
             <input
-              className={`${inputClass} opacity-60 cursor-not-allowed`}
+              className="w-full h-auto px-3 py-2 rounded-lg border border-input bg-muted/30 text-sm text-muted-foreground cursor-not-allowed outline-none"
               type="text"
               value={currentProvider.baseUrl}
               readOnly
               tabIndex={-1}
             />
-          </label>
+          </div>
 
           {/* Persona */}
-          <label className="flex flex-col gap-1 mb-4">
-            <span className={labelClass}>角色人设</span>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">角色人设</label>
             <textarea
-              className={`${inputClass} resize-y min-h-[60px]`}
+              className="w-full h-auto min-h-[60px] px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-all resize-y"
               placeholder="描述宠物的性格…"
-              rows={4}
+              rows={3}
               value={form.persona}
               onChange={(e): void => { handleChange("persona", e.target.value); }}
             />
-          </label>
+          </div>
 
-          {/* Opacity Slider */}
-          <label className="flex flex-col gap-1 mb-5">
-            <span className={labelClass}>
+          {/* Opacity */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-accent uppercase tracking-wider">
               窗口透明度: {Math.round(form.opacity * 100)}%
-            </span>
-            <input
-              type="range"
+            </label>
+            <Slider
+              value={[form.opacity]}
+              onValueChange={(v) => { const val = Array.isArray(v) ? v[0] : v; if (val !== undefined) handleChange("opacity", val); }}
               min={0.1}
               max={1}
               step={0.05}
-              value={form.opacity}
-              onChange={(e): void => { handleChange("opacity", Number.parseFloat(e.target.value)); }}
-              className="w-full h-[6px] appearance-none bg-soft-brown/50 rounded-[3px] outline-none cursor-pointer accent-primary
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-[16px] [&::-webkit-slider-thumb]:h-[16px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-cream [&::-webkit-slider-thumb]:cursor-pointer
-                [&::-moz-range-thumb]:w-[16px] [&::-moz-range-thumb]:h-[16px] [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-cream [&::-moz-range-thumb]:cursor-pointer"
+              className="w-full"
             />
-          </label>
+          </div>
+        </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-3 mt-5">
-            <motion.button
-              className="flex-1 py-2.5 border-none rounded-[8px] bg-primary text-primary-content text-[14px] font-medium cursor-pointer"
-              onClick={handleSave}
+        {/* Action buttons */}
+        <div className="px-6 pb-5 pt-2 border-t border-border/50">
+          <div className="flex gap-3">
+            <button
+              className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium border-none transition-all
+                ${canSave
+                  ? "bg-primary text-primary-foreground cursor-pointer hover:opacity-90 active:scale-95"
+                  : "bg-muted text-muted-foreground/50 cursor-not-allowed"}`}
+              onClick={canSave ? handleSave : undefined}
               type="button"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
             >
               保存
-            </motion.button>
-            <motion.button
-              className="flex-1 py-2.5 rounded-[8px] bg-soft-brown/30 text-text-brown text-[14px] font-medium cursor-pointer border border-soft-brown/30"
+            </button>
+            <button
+              className="flex-1 px-4 py-2.5 rounded-lg text-sm font-medium bg-muted text-foreground border border-border cursor-pointer hover:bg-muted/80 active:scale-95 transition-all"
               onClick={handleClose}
               type="button"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
             >
               取消
-            </motion.button>
+            </button>
           </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+          {form.apiKey && verifyStatus !== "success" && (
+            <p className="text-xs text-destructive/70 mt-1.5 ml-0.5">
+              {verifyStatus === "idle" ? "🔍 请先验证 API Key 后再保存" : ""}
+              {verifyStatus === "verifying" ? "⏳ 验证中，请稍候..." : ""}
+              {verifyStatus === "error" ? "❌ 验证失败，请检查 API Key 后重试" : ""}
+            </p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
