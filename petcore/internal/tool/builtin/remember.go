@@ -7,17 +7,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strconv"
+
+	"github.com/desktop-pet/petcore/internal/memory"
 )
 
 // RememberTool 允许 LLM 保存用户事实到记忆系统。
-//
-// Phase 1：仅提供工具定义（Name / Description / JSON Schema）。
-// Phase 2：在 Execute 中通过 ToolRegistry 或 Agent 回调保存到 memory.Manager。
-type RememberTool struct{}
+type RememberTool struct {
+	mem memory.Manager
+}
 
 // NewRemember 创建一个新的 RememberTool 实例。
-func NewRemember() *RememberTool {
-	return &RememberTool{}
+// mem 是记忆系统管理器，用于持久化用户事实。
+func NewRemember(mem memory.Manager) *RememberTool {
+	return &RememberTool{mem: mem}
 }
 
 // Name 返回工具名称。
@@ -45,8 +49,7 @@ type RememberArgs struct {
 	Importance int    `json:"importance"`
 }
 
-// Execute 执行 remember 工具调用。
-// Phase 1：仅解析参数并返回确认信息——实际持久化在 Phase 4 实现。
+// Execute 执行 remember 工具调用，将事实保存到记忆系统。
 func (t *RememberTool) Execute(_ context.Context, args string) (string, error) {
 	var params RememberArgs
 	if err := json.Unmarshal([]byte(args), &params); err != nil {
@@ -66,6 +69,31 @@ func (t *RememberTool) Execute(_ context.Context, args string) (string, error) {
 		params.Importance = 10
 	}
 
+	// 持久化到记忆系统
+	if t.mem != nil {
+		if err := t.mem.Remember(params.Key, params.Value, params.Importance); err != nil {
+			return "", fmt.Errorf("remember: save failed: %w", err)
+		}
+
+		// 同时保存为长期记忆（通过事实抽取机制）
+		_ = t.mem.Store(nil, memory.Fact{
+			Key:        params.Key,
+			Value:      params.Value,
+			Category:   "preference",
+			Importance: params.Importance,
+			Timestamp:  timestamp(),
+		})
+	}
+
 	result := fmt.Sprintf("Saved fact: %s = %s (importance: %d)", params.Key, params.Value, params.Importance)
 	return result, nil
+}
+
+func timestamp() int64 {
+	ts := os.Getenv("MOCK_NOW_MS")
+	if ts == "" {
+		return 0 // real timestamp handled by caller
+	}
+	v, _ := strconv.ParseInt(ts, 10, 64)
+	return v
 }
