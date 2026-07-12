@@ -80,19 +80,41 @@ func (e *Engine) Run(ctx context.Context) error {
 		e.log.Error("engine: send startup event failed", "error", err)
 	}
 
-	// 主事件循环（骨架）
-	// TODO: Phase 2 — 实现完整的事件循环（接收 stdin 命令、定时任务等）
-	<-ctx.Done()
+	// 心跳 ticker
+	ticker := time.NewTicker(heartbeatInterval)
+	defer ticker.Stop()
 
-	// 清理
-	if err := e.plugin.StopAll(); err != nil {
-		e.log.Error("engine: plugin stop failed", "error", err)
-	}
-	if err := e.sink.Close(); err != nil {
-		e.log.Error("engine: sink close failed", "error", err)
-	}
+	e.log.Info("engine: event loop started", "heartbeat_interval", heartbeatInterval)
 
-	return nil
+	// 主事件循环：for + select 多路复用
+	// 扩展点：后续可加入 cmdCh（stdin 命令队列）、timerCh（定时任务调度）等
+	for {
+		select {
+		case <-ctx.Done():
+			e.log.Info("engine: shutting down event loop")
+			// 清理
+			if err := e.plugin.StopAll(); err != nil {
+				e.log.Error("engine: plugin stop failed", "error", err)
+			}
+			if err := e.sink.Close(); err != nil {
+				e.log.Error("engine: sink close failed", "error", err)
+			}
+			return nil
+
+		case <-ticker.C:
+			// 心跳事件：通知外部引擎仍在运行
+			if err := e.sink.Send(event.Event{
+				Kind: event.EventStateChanged,
+				Data: map[string]any{
+					"state":     string(e.fsm.Current()),
+					"heartbeat": true,
+				},
+				Meta: event.NewMeta("core", ""),
+			}); err != nil {
+				e.log.Error("engine: heartbeat send failed", "error", err)
+			}
+		}
+	}
 }
 
 // HandleInput 处理用户输入（对话消息）。
