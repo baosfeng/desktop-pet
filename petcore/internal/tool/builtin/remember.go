@@ -76,7 +76,7 @@ func (t *RememberTool) Execute(_ context.Context, args string) (string, error) {
 		}
 
 		// 同时保存为长期记忆（通过事实抽取机制）
-		_ = t.mem.Store(nil, memory.Fact{
+		_ = t.mem.Store(context.TODO(), memory.Fact{
 			Key:        params.Key,
 			Value:      params.Value,
 			Category:   "preference",

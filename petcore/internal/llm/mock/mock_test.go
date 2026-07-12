@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestGetMockDelay_Default(t *testing.T) {
-	os.Unsetenv("MOCK_LLM_DELAY")
+	_ = os.Unsetenv("MOCK_LLM_DELAY")
 	d := getMockDelay()
 	if d != 0 {
 		t.Errorf("getMockDelay() = %v, want 0", d)
@@ -43,9 +44,9 @@ func TestProvider_NameAndModel(t *testing.T) {
 }
 
 func TestChat_DefaultReply(t *testing.T) {
-	os.Unsetenv("MOCK_LLM_REPLY")
+	_ = os.Unsetenv("MOCK_LLM_REPLY")
 	p := &Provider{}
-	resp, err := p.Chat(nil, llm.Request{})
+	resp, err := p.Chat(context.TODO(), llm.Request{})
 	if err != nil {
 		t.Fatal(err)
 	}
