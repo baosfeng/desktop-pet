@@ -26,10 +26,9 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
     return null;
   })();
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (latestAssistantIndex !== typingIndex) {
-      setTypingIndex(latestAssistantIndex);
+      setTypingIndex(latestAssistantIndex); // eslint-disable-line react-hooks/set-state-in-effect
       setVisibleChars(0);
     }
   }, [latestAssistantIndex, typingIndex]);
@@ -39,8 +38,8 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
     const msg = messages[typingIndex];
     if (!msg) return;
     if (visibleChars < msg.content.length) {
-      const timer = setTimeout(() => setVisibleChars((p) => p + 1), TYPEWRITER_SPEED_MS);
-      return () => clearTimeout(timer);
+      const timer = setTimeout((): void => { setVisibleChars((p) => p + 1); }, TYPEWRITER_SPEED_MS);
+      return (): void => { clearTimeout(timer); };
     }
   }, [typingIndex, visibleChars, messages]);
 
@@ -126,7 +125,7 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
           type="text"
           placeholder="输入消息..."
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
+          onChange={(e): void => { setInputText(e.target.value); }}
         />
         <motion.button
           className="px-4 py-2 border-none rounded-[8px] bg-primary text-primary-content text-[13px] font-medium cursor-pointer"
