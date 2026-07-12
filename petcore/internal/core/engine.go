@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/desktop-pet/petcore/internal/agent"
 	"github.com/desktop-pet/petcore/internal/config"
@@ -58,8 +59,12 @@ func New(
 	}
 }
 
+// heartbeatInterval 是引擎心跳事件发送间隔。
+const heartbeatInterval = 30 * time.Second
+
 // Run 启动引擎主循环。
 // 这是一个阻塞调用，应放在 goroutine 中运行。
+// 包含：心跳 ticker、事件监听（扩展点）。
 func (e *Engine) Run(ctx context.Context) error {
 	// 启动所有插件
 	if err := e.plugin.StartAll(ctx); err != nil {
