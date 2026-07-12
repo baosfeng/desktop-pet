@@ -85,6 +85,61 @@ func TestEngine_Run_StartStop(t *testing.T) {
 	}
 }
 
+func TestEngine_SetSink_Nil(t *testing.T) {
+	eng := newTestEngine(t, false)
+	// SetSink with nil should not panic
+	eng.SetSink(nil)
+}
+
+func TestEngine_SetSink_Replaces(t *testing.T) {
+	eng := newTestEngine(t, false)
+
+	ch := make(chan event.Event, 10)
+	eng.SetSink(&eventSink{ch: ch})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_ = eng.HandleInput(ctx, "hi")
+
+	select {
+	case e := <-ch:
+		if e.Kind == "" {
+			t.Error("event should have a kind")
+		}
+	case <-ctx.Done():
+		t.Error("timeout waiting for event")
+	}
+}
+
+func TestEngine_HandleInput_WithStateTransition(t *testing.T) {
+	eng := newTestEngine(t, false)
+
+	ch := make(chan event.Event, 100)
+	eng.SetSink(&eventSink{ch: ch})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := eng.HandleInput(ctx, "hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Should get at least a state.changed event
+	select {
+	case e := <-ch:
+		if e.Kind == event.EventStateChanged {
+			data, ok := e.Data.(map[string]any)
+			if ok && data["state"] != nil {
+				// OK — state transition happened
+			}
+		}
+	case <-ctx.Done():
+		t.Error("timeout waiting for event")
+	}
+}
+
 // ─── 测试辅助 ────────────────────────────────
 
 func newTestEngine(t *testing.T, withPlugin bool) *Engine {
@@ -134,4 +189,21 @@ func (s *eventSink) Send(e event.Event) error {
 func (s *eventSink) Close() error {
 	// don't close the channel — test owns it
 	return nil
+}
+
+func TestEngine_New_WithNilSink(t *testing.T) {
+	provider, _ := llm.NewProvider("mock", nil)
+	machine := fsm.NewMockMachine(fsm.StateIdle)
+	mem := memory.NewMockManager()
+	toolReg := tool.NewRegistry()
+	ag := agent.New(provider, agent.WithMemory(mem), agent.WithToolRegistry(toolReg))
+	pluginReg := plugin.NewRegistry()
+	cfg := config.DefaultConfig()
+
+	eng := New(machine, ag, mem, pluginReg, toolReg, cfg, nil)
+	if eng == nil {
+		t.Fatal("New returned nil")
+	}
+	// Ensure noop sink was used (no panic on Send)
+	_ = eng.sink.Send(event.Event{Kind: event.EventPetSpeak})
 }

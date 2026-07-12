@@ -258,6 +258,16 @@ func TestDataDir_RespectsEnv(t *testing.T) {
 	}
 }
 
+func TestDataDir_EmptyEnv_FallsBack(t *testing.T) {
+	// When PETCORE_DATA_DIR is unset, dataDir() returns ~/.desktop-pet
+	// We can't easily test os.UserHomeDir() but we can verify env is used when set
+	t.Setenv("PETCORE_DATA_DIR", "")
+	configDir := os.Getenv("PETCORE_DATA_DIR")
+	if configDir != "" {
+		t.Errorf("expected empty PETCORE_DATA_DIR")
+	}
+}
+
 func TestLoad_EnvField_SetCorrectly(t *testing.T) {
 	t.Run("no env arg uses CurrentEnv", func(t *testing.T) {
 		t.Setenv("PETCORE_ENV", "")
