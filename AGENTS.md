@@ -88,22 +88,23 @@ desktop-pet/
 │   └── tauri.conf.json
 ├── frontend/             ★ React + PixiJS + Live2D 前端
 │   ├── src/
-│   │   ├── components/   # React 组件
+│   │   ├── components/   # React 组件（含 OnboardingDialog 新手引导）
 │   │   ├── hooks/        # Tauri IPC hooks
-│   │   └── lib/bridge.ts # Tauri IPC 封装
+│   │   ├── stores/       # Zustand 状态管理（含 API Key 安全存储）
+│   │   └── lib/          # bridge.ts + secureStore.ts + live2d.ts
 │   └── package.json
 ├── petcore/              ★ Go PetCore 内核
 │   ├── cmd/petcore/main.go  # 入口（sidecar + CLI 双模式）
 │   └── internal/
-│       ├── core/        # 状态引擎 + 事件循环
+│       ├── core/        # 状态引擎 + 事件循环 + CLI 交互模式
 │       ├── agent/       # AI Agent (Pipeline)
-│       ├── memory/      # 记忆系统（3层）
+│       ├── memory/      # 记忆系统（3层 + SQLite 持久化）
 │       ├── llm/         # LLM 适配层（Provider 注册表）
 │       ├── plugin/      # 插件系统（L1 YAML / L2 JS / L3 MCP）
 │       ├── tool/        # 工具系统
 │       ├── event/       # 事件系统
 │       ├── fsm/         # 状态机
-│       ├── server/      # sidecar 通信
+│       ├── server/      # sidecar 通信（含 verify_api_key）
 │       └── config/      # 配置加载
 ├── docs/                 ★ 项目文档
 │   ├── 索引.md
