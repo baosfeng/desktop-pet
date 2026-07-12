@@ -64,10 +64,10 @@ actions:
   - trigger: on_startup
     speak: "test"
 `)
-	if err := os.WriteFile(filepath.Join(tmpDir, "test.yaml"), yamlContent, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "test.yaml"), yamlContent, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(tmpDir, "ignored.txt"), []byte("not yaml"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "ignored.txt"), []byte("not yaml"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	ymlContent := []byte(`
@@ -76,7 +76,7 @@ actions:
   - trigger: on_idle
     action: wave
 `)
-	if err := os.WriteFile(filepath.Join(tmpDir, "action.yml"), ymlContent, 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(tmpDir, "action.yml"), ymlContent, 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -149,7 +149,7 @@ func TestLoadYAMLDir_FileReadError(t *testing.T) {
 func TestLoadYAMLFile_InvalidFormat(t *testing.T) {
 	tmpDir := t.TempDir()
 	badFile := filepath.Join(tmpDir, "bad.yaml")
-	if err := os.WriteFile(badFile, []byte("invalid yaml: [\n"), 0644); err != nil {
+	if err := os.WriteFile(badFile, []byte("invalid yaml: [\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -172,7 +172,7 @@ func TestLoadYAMLDir_WithDirEntry(t *testing.T) {
 	tmpDir := t.TempDir()
 	// Create a subdirectory with .yaml extension to test isDir skip
 	subDir := filepath.Join(tmpDir, "subdir.yaml")
-	if err := os.Mkdir(subDir, 0755); err != nil {
+	if err := os.Mkdir(subDir, 0o750); err != nil {
 		t.Fatal(err)
 	}
 

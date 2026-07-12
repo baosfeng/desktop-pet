@@ -25,12 +25,12 @@ type ActionPack struct {
 
 // Action 定义单个动作及其触发条件。
 type Action struct {
-	Trigger string   `yaml:"trigger"`          // on_startup / on_user_message / on_idle
-	Speak   string   `yaml:"speak,omitempty"`   // 宠物说的话
-	Emotion string   `yaml:"emotion,omitempty"` // 情绪变化
-	Action  string   `yaml:"action,omitempty"`  // 动作名称（wave / jump / blink）
-	DelayMS int      `yaml:"delay_ms,omitempty"`// 执行延迟
-	Tags    []string `yaml:"tags,omitempty"`    // 匹配标签
+	Trigger string   `yaml:"trigger"`            // on_startup / on_user_message / on_idle
+	Speak   string   `yaml:"speak,omitempty"`    // 宠物说的话
+	Emotion string   `yaml:"emotion,omitempty"`  // 情绪变化
+	Action  string   `yaml:"action,omitempty"`   // 动作名称（wave / jump / blink）
+	DelayMS int      `yaml:"delay_ms,omitempty"` // 执行延迟
+	Tags    []string `yaml:"tags,omitempty"`     // 匹配标签
 }
 
 // ─── YAML 动作包插件 ─────────────────────────
@@ -105,7 +105,8 @@ func LoadYAMLDir(reg Registry, dir string) (int, error) {
 }
 
 func loadYAMLFile(path string) (*ActionPack, error) {
-	data, err := os.ReadFile(path)
+	// G304: path comes from filepath.Join(dir, entry.Name()) which is controlled input
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
