@@ -7,8 +7,8 @@ import (
 	"github.com/desktop-pet/petcore/internal/event"
 	"github.com/desktop-pet/petcore/internal/feature"
 	"github.com/desktop-pet/petcore/internal/llm"
-	"github.com/desktop-pet/petcore/internal/memory"
 	_ "github.com/desktop-pet/petcore/internal/llm/mock"
+	"github.com/desktop-pet/petcore/internal/memory"
 )
 
 func TestPreProcessStage_FiltersEmptyMessages(t *testing.T) {
@@ -39,7 +39,7 @@ func TestPreProcessStage_FiltersEmptyMessages(t *testing.T) {
 func TestMemoryStage_InjectsMemory(t *testing.T) {
 	mem := memory.NewInMemoryManager()
 	mem.AddShortTerm(memory.Message{Role: "user", Content: "previous chat"})
-	mem.Remember("favorite", "pizza", 5)
+	_ = mem.Remember("favorite", "pizza", 5)
 
 	flags := feature.New(map[string]bool{"agent.memory_stage": true})
 	flags.RegisterDefaults()

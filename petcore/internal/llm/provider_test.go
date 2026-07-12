@@ -74,6 +74,7 @@ func (m *mockProvider) Stream(_ context.Context, _ Request) (<-chan Chunk, error
 	close(ch)
 	return ch, nil
 }
+
 func (m *mockProvider) Chat(_ context.Context, _ Request) (Response, error) {
 	return Response{Content: "mock response"}, nil
 }

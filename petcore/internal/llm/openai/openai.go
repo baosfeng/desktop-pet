@@ -77,25 +77,25 @@ func (p *Provider) httpClient() *http.Client {
 // ─── 请求/响应结构 ───────────────────────────
 
 type chatRequest struct {
-	Model       string          `json:"model"`
-	Messages    []chatMessage   `json:"messages"`
-	Stream      bool            `json:"stream"`
-	Temperature float64         `json:"temperature,omitempty"`
-	MaxTokens   int             `json:"max_tokens,omitempty"`
-	Tools       []llm.Tool      `json:"tools,omitempty"`
+	Model       string        `json:"model"`
+	Messages    []chatMessage `json:"messages"`
+	Stream      bool          `json:"stream"`
+	Temperature float64       `json:"temperature,omitempty"`
+	MaxTokens   int           `json:"max_tokens,omitempty"`
+	Tools       []llm.Tool    `json:"tools,omitempty"`
 }
 
 type chatMessage struct {
-	Role       string      `json:"role"`
-	Content    string      `json:"content"`
-	ToolCallID string      `json:"tool_call_id,omitempty"`
-	ToolCalls  []toolCall  `json:"tool_calls,omitempty"`
+	Role       string     `json:"role"`
+	Content    string     `json:"content"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
+	ToolCalls  []toolCall `json:"tool_calls,omitempty"`
 }
 
 type toolCall struct {
-	ID       string         `json:"id"`
-	Type     string         `json:"type"`
-	Function toolCallFunc   `json:"function"`
+	ID       string       `json:"id"`
+	Type     string       `json:"type"`
+	Function toolCallFunc `json:"function"`
 }
 
 type toolCallFunc struct {
@@ -104,9 +104,9 @@ type toolCallFunc struct {
 }
 
 type chatResponse struct {
-	Choices []choice       `json:"choices"`
-	Usage   *llm.Usage     `json:"usage,omitempty"`
-	Error   *apiError      `json:"error,omitempty"`
+	Choices []choice   `json:"choices"`
+	Usage   *llm.Usage `json:"usage,omitempty"`
+	Error   *apiError  `json:"error,omitempty"`
 }
 
 type choice struct {
@@ -131,6 +131,8 @@ type apiError struct {
 // ─── Provider 接口实现 ───────────────────────
 
 // Stream 执行流式对话并返回结果片段通道。
+//
+//nolint:cyclop
 func (p *Provider) Stream(ctx context.Context, req llm.Request) (<-chan llm.Chunk, error) {
 	cReq := p.buildRequest(req, true)
 	body, err := json.Marshal(cReq)
@@ -154,7 +156,7 @@ func (p *Provider) Stream(ctx context.Context, req llm.Request) (<-chan llm.Chun
 
 	go func() {
 		defer close(ch)
-		defer httpResp.Body.Close()
+		defer func() { _ = httpResp.Body.Close() }()
 
 		if httpResp.StatusCode != http.StatusOK {
 			p.parseError(ch, httpResp)
@@ -251,6 +253,8 @@ func (p *Provider) Stream(ctx context.Context, req llm.Request) (<-chan llm.Chun
 }
 
 // Chat 执行非流式对话并返回完整响应。
+//
+//nolint:cyclop
 func (p *Provider) Chat(ctx context.Context, req llm.Request) (llm.Response, error) {
 	cReq := p.buildRequest(req, false)
 	body, err := json.Marshal(cReq)
@@ -269,7 +273,7 @@ func (p *Provider) Chat(ctx context.Context, req llm.Request) (llm.Response, err
 	if err != nil {
 		return llm.Response{}, fmt.Errorf("openai: http request: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {

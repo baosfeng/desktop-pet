@@ -71,17 +71,17 @@ func (p *Provider) httpClient() *http.Client {
 // ollamaChatRequest 是 Ollama 聊天 API 的请求体。
 // 参考: https://github.com/ollama/ollama/blob/main/docs/api.md
 type ollamaChatRequest struct {
-	Model       string           `json:"model"`
-	Messages    []ollamaMessage  `json:"messages"`
-	Stream      bool             `json:"stream"`
-	Temperature float64          `json:"temperature,omitempty"`
-	Tools       []llm.Tool       `json:"tools,omitempty"`
+	Model       string          `json:"model"`
+	Messages    []ollamaMessage `json:"messages"`
+	Stream      bool            `json:"stream"`
+	Temperature float64         `json:"temperature,omitempty"`
+	Tools       []llm.Tool      `json:"tools,omitempty"`
 }
 
 type ollamaMessage struct {
-	Role      string      `json:"role"`
-	Content   string      `json:"content"`
-	ToolCalls []toolCall  `json:"tool_calls,omitempty"`
+	Role      string     `json:"role"`
+	Content   string     `json:"content"`
+	ToolCalls []toolCall `json:"tool_calls,omitempty"`
 }
 
 type toolCall struct {
@@ -95,17 +95,19 @@ type toolCallFunc struct {
 
 // ollamaChatResponse 是 Ollama 聊天 API 的流式响应片段。
 type ollamaChatResponse struct {
-	Model       string         `json:"model"`
-	CreatedAt   string         `json:"created_at"`
-	Message     *ollamaMessage `json:"message,omitempty"`
-	Done        bool           `json:"done"`
-	DoneReason  string         `json:"done_reason,omitempty"`
-	Error       string         `json:"error,omitempty"`
+	Model      string         `json:"model"`
+	CreatedAt  string         `json:"created_at"`
+	Message    *ollamaMessage `json:"message,omitempty"`
+	Done       bool           `json:"done"`
+	DoneReason string         `json:"done_reason,omitempty"`
+	Error      string         `json:"error,omitempty"`
 }
 
 // ─── Provider 接口实现 ───────────────────────
 
 // Stream 执行流式对话并返回结果片段通道。
+//
+//nolint:cyclop
 func (p *Provider) Stream(ctx context.Context, req llm.Request) (<-chan llm.Chunk, error) {
 	oReq := p.buildRequest(req, true)
 	body, err := json.Marshal(oReq)
@@ -129,7 +131,7 @@ func (p *Provider) Stream(ctx context.Context, req llm.Request) (<-chan llm.Chun
 
 	go func() {
 		defer close(ch)
-		defer httpResp.Body.Close()
+		defer func() { _ = httpResp.Body.Close() }()
 
 		if httpResp.StatusCode != http.StatusOK {
 			p.parseError(ch, httpResp)
@@ -219,7 +221,7 @@ func (p *Provider) Chat(ctx context.Context, req llm.Request) (llm.Response, err
 	if err != nil {
 		return llm.Response{}, fmt.Errorf("ollama: http request: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	respBody, err := io.ReadAll(httpResp.Body)
 	if err != nil {

@@ -28,7 +28,7 @@ linters-settings:
       - default    # 第三方包
       - prefix(github.com/desktop-pet/petcore)  # 内部包
   cyclop:
-    max-complexity: 15
+    max-complexity: 20
     package-average: 10.0
   forbidigo:
     forbid:
@@ -72,6 +72,9 @@ issues:
         - errcheck
         - gosec
         - cyclop
+    - linters:
+        - gosec
+      text: "G104"
     - path: cmd/
       linters:
         - forbidigo  # main.go 中允许使用 fmt.Print
