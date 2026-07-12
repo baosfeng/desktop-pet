@@ -106,8 +106,8 @@ describe("petStore", () => {
   describe("settings", () => {
     it("has default settings", () => {
       const { settings } = usePetStore.getState();
-      expect(settings.baseUrl).toBe("https://api.openai.com/v1");
-      expect(settings.modelName).toBe("gpt-4o-mini");
+      expect(settings.baseUrl).toBe("https://api.deepseek.com/v1");
+      expect(settings.modelName).toBe("deepseek-v4-flash");
     });
 
     it("updates settings partially", () => {

@@ -37,7 +37,7 @@ beforeEach(() => {
       apiKey: "",
       provider: "deepseek",
       baseUrl: "https://api.deepseek.com/v1",
-      modelName: "deepseek-chat",
+      modelName: "deepseek-v4-flash",
       persona: "test",
       opacity: 0.9,
     },
@@ -87,7 +87,7 @@ describe("useChat (store-level)", () => {
 describe("useSettings (store-level)", () => {
   it("returns default settings", () => {
     const { settings } = usePetStore.getState();
-    expect(settings.baseUrl).toBe("https://api.openai.com/v1");
+    expect(settings.baseUrl).toBe("https://api.deepseek.com/v1");
   });
 
   it("toggles settings via store", () => {
