@@ -16,14 +16,18 @@ import (
 	"github.com/desktop-pet/petcore/internal/config"
 	"github.com/desktop-pet/petcore/internal/core"
 	"github.com/desktop-pet/petcore/internal/event"
+	"github.com/desktop-pet/petcore/internal/feature"
 	"github.com/desktop-pet/petcore/internal/fsm"
 	"github.com/desktop-pet/petcore/internal/llm"
 	_ "github.com/desktop-pet/petcore/internal/llm/mock"
+	_ "github.com/desktop-pet/petcore/internal/llm/openai"
+	_ "github.com/desktop-pet/petcore/internal/llm/ollama"
 	"github.com/desktop-pet/petcore/internal/log"
 	"github.com/desktop-pet/petcore/internal/memory"
 	"github.com/desktop-pet/petcore/internal/plugin"
 	"github.com/desktop-pet/petcore/internal/server"
 	"github.com/desktop-pet/petcore/internal/tool"
+	"github.com/desktop-pet/petcore/internal/tool/builtin"
 )
 
 func main() {
@@ -89,6 +93,7 @@ func buildEngine(cfg *config.Config) *core.Engine {
 	provider, err := llm.NewProvider(cfg.LLM.Provider, map[string]any{
 		"model":    cfg.LLM.Model,
 		"base_url": cfg.LLM.BaseURL,
+		"api_key":  cfg.LLM.APIKey(),
 	})
 	if err != nil {
 		log.Error("failed to create LLM provider", "error", err)
@@ -103,15 +108,31 @@ func buildEngine(cfg *config.Config) *core.Engine {
 
 	// Tool Registry
 	toolReg := tool.NewRegistry()
+	_ = toolReg.Register(builtin.NewRemember(mem))
+
+	// Feature Flags
+	flags := feature.New(cfg.FeatureFlags)
+	flags.RegisterDefaults()
 
 	// Agent
 	ag := agent.New(provider,
 		agent.WithMemory(mem),
 		agent.WithToolRegistry(toolReg),
+		agent.WithFlags(flags),
 	)
 
 	// Plugin Registry
 	pluginReg := plugin.NewRegistry()
+
+	// 加载 L1 YAML 动作包（如果功能开关开启且目录存在）
+	if flags.IsEnabled(feature.FlagL1YAML) && cfg.Plugin.ActionsDir != "" {
+		count, err := plugin.LoadYAMLDir(pluginReg, cfg.Plugin.ActionsDir)
+		if err != nil {
+			log.Warn("failed to load YAML plugins", "error", err)
+		} else if count > 0 {
+			log.Info("loaded YAML action packs", "count", count)
+		}
+	}
 
 	// 注入 NoopSink（sidecar 模式下会被 SinkAdapter 替换）
 	return core.New(machine, ag, mem, pluginReg, toolReg, cfg, event.NoopSink{})
