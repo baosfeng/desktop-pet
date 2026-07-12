@@ -8,7 +8,6 @@
  * Windows: %APPDATA%/com.desktop-pet.app/
  * Linux: ~/.local/share/com.desktop-pet.app/
  */
-
 import { Store } from "@tauri-apps/plugin-store";
 
 const STORE_FILE = "secrets.json";

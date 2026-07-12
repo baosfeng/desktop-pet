@@ -64,13 +64,13 @@ pre-commit:
     check-merge-conflict:
       glob: "*"
       run: |-
-        test "$(grep -cE '^<<<<<<< |^=======$|^>>>>>>> ' {staged_files})" -eq 0
+        cat {staged_files} 2>/dev/null | grep -cE '^<<<<<<< |^=======$|^>>>>>>> ' | xargs test 0 -eq
       description: "检查未解决的合并冲突"
 
     secret-scan:
       glob: "*"
       run: |-
-        grep -nPE '(?:sk-[a-zA-Z0-9]{20,}|gh[pso]_[a-zA-Z0-9]{36,}|github_pat_[a-zA-Z0-9_]{22,}|glpat-[a-zA-Z0-9_-]{20,}|xox[baprs]-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|export\s+\w+=\s*\x27?[A-Za-z0-9_\-]{20,}|api[-_]?key[" :=]+\x27?[a-zA-Z0-9]{16,})' {staged_files} && exit 1 || true
+        perl -ne 'exit 1 if /(?:sk-[a-zA-Z0-9]{20,}|gh[pso]_[a-zA-Z0-9]{36,}|github_pat_[a-zA-Z0-9_]{22,}|glpat-[a-zA-Z0-9_-]{20,}|xox[baprs]-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|export\s+\w+=\s*\x27?[A-Za-z0-9_\-]{20,}|api[-_]?key[" :=]+\x27?[a-zA-Z0-9]{16,})/' {staged_files}
       description: "扫描密钥泄露（API Key / GitHub PAT / AWS / Slack / GitLab）"
 
 commit-msg:
@@ -78,7 +78,7 @@ commit-msg:
     commit-lint:
       run: |-
         echo "检查提交信息格式（中文描述，首字非小写字母）："
-        head -1 "{1}" | grep -P '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+' || true
+        head -1 "{1}" | grep -E '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+' || true
       description: "检查 conventional commit 格式"
 
 # post-commit 钩子：提交后自动运行相关测试

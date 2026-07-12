@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { getApiKey, setApiKey, removeApiKey } from "@/lib/secureStore";
+
+import { getApiKey, removeApiKey, setApiKey } from "@/lib/secureStore";
 
 export type PetState = "idle" | "attention" | "interaction" | "speaking";
 
@@ -110,89 +111,91 @@ function loadSettingsFromStorage(): Settings {
   return { ...DEFAULT_SETTINGS };
 }
 
-export const usePetStore = create<PetStore>()(subscribeWithSelector((set, get) => ({
-  // Pet state
-  petState: "idle",
-  setPetState: (state) => {
-    set({ petState: state });
-  },
+export const usePetStore = create<PetStore>()(
+  subscribeWithSelector((set, get) => ({
+    // Pet state
+    petState: "idle",
+    setPetState: (state) => {
+      set({ petState: state });
+    },
 
-  // Messages
-  messages: loadMessagesFromStorage(),
-  addMessage: (msg) => {
-    set((state) => ({ messages: [...state.messages, msg].slice(-MAX_MESSAGES) }));
-  },
+    // Messages
+    messages: loadMessagesFromStorage(),
+    addMessage: (msg) => {
+      set((state) => ({ messages: [...state.messages, msg].slice(-MAX_MESSAGES) }));
+    },
 
-  appendToLastAssistant: (text) => {
-    set((state) => {
-      const msgs = [...state.messages];
-      for (let i = msgs.length - 1; i >= 0; i--) {
-        const m = msgs[i];
-        if (m?.role === "assistant") {
-          msgs[i] = { ...m, content: m.content + text };
-          break;
+    appendToLastAssistant: (text) => {
+      set((state) => {
+        const msgs = [...state.messages];
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          const m = msgs[i];
+          if (m?.role === "assistant") {
+            msgs[i] = { ...m, content: m.content + text };
+            break;
+          }
         }
+        return { messages: msgs };
+      });
+    },
+
+    clearMessages: () => {
+      set({ messages: [] });
+    },
+
+    // Settings
+    settings: loadSettingsFromStorage(),
+    apiKeyLoaded: false,
+    updateSettings: (partial) => {
+      set((state) => ({ settings: { ...state.settings, ...partial } }));
+    },
+    loadSettings: () => {
+      set({ settings: loadSettingsFromStorage() });
+    },
+    saveSettings: () => {
+      const { settings } = get();
+      // 保存到 localStorage 时排除 apiKey（敏感字段走安全存储）
+      const { apiKey: _, ...safeSettings } = settings;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(safeSettings));
+    },
+
+    /**
+     * 从安全存储（tauri-plugin-store）加载 API Key。
+     * 应用启动时调用。
+     */
+    loadApiKey: async () => {
+      const key = await getApiKey();
+      set((state) => ({
+        settings: { ...state.settings, apiKey: key },
+        apiKeyLoaded: true,
+      }));
+    },
+
+    /**
+     * 将 API Key 保存到安全存储（tauri-plugin-store）。
+     */
+    saveApiKey: async () => {
+      const { settings } = get();
+      if (settings.apiKey) {
+        await setApiKey(settings.apiKey);
+      } else {
+        await removeApiKey();
       }
-      return { messages: msgs };
-    });
-  },
+    },
 
-  clearMessages: () => {
-    set({ messages: [] });
-  },
+    // Settings panel
+    showSettings: false,
+    toggleSettings: () => {
+      set((state) => ({ showSettings: !state.showSettings }));
+    },
 
-  // Settings
-  settings: loadSettingsFromStorage(),
-  apiKeyLoaded: false,
-  updateSettings: (partial) => {
-    set((state) => ({ settings: { ...state.settings, ...partial } }));
-  },
-  loadSettings: () => {
-    set({ settings: loadSettingsFromStorage() });
-  },
-  saveSettings: () => {
-    const { settings } = get();
-    // 保存到 localStorage 时排除 apiKey（敏感字段走安全存储）
-    const { apiKey: _, ...safeSettings } = settings;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeSettings));
-  },
-
-  /**
-   * 从安全存储（tauri-plugin-store）加载 API Key。
-   * 应用启动时调用。
-   */
-  loadApiKey: async () => {
-    const key = await getApiKey();
-    set((state) => ({
-      settings: { ...state.settings, apiKey: key },
-      apiKeyLoaded: true,
-    }));
-  },
-
-  /**
-   * 将 API Key 保存到安全存储（tauri-plugin-store）。
-   */
-  saveApiKey: async () => {
-    const { settings } = get();
-    if (settings.apiKey) {
-      await setApiKey(settings.apiKey);
-    } else {
-      await removeApiKey();
-    }
-  },
-
-  // Settings panel
-  showSettings: false,
-  toggleSettings: () => {
-    set((state) => ({ showSettings: !state.showSettings }));
-  },
-
-  // Live2D
-  live2dApp: null,
-  setLive2dApp: (app) => {
-    set({ live2dApp: app });
-  },
-})));
+    // Live2D
+    live2dApp: null,
+    setLive2dApp: (app) => {
+      set({ live2dApp: app });
+    },
+  })),
+);
 
 // --- 消息持久化：debounce 500ms 写入 localStorage ---
 let saveTimer: ReturnType<typeof setTimeout> | null = null;

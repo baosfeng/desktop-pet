@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type React from "react";
 
 import { ChatBubble } from "@/components/ChatBubble";
-import { SettingsPanel } from "@/components/SettingsPanel";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
+import { SettingsPanel } from "@/components/SettingsPanel";
 
 import { useChat, usePetEvent, useSettings } from "@/hooks/usePet";
 

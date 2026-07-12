@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type React from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
 import { usePetStore } from "@/stores/petStore";
 
 const STEPS = [

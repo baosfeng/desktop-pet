@@ -115,13 +115,17 @@ pre-push: lint build-petcore ## 推送前运行：lint + PetCore 编译（同 CI
 	@echo "║  ✅  所有检查通过，可以推送！           ║"
 	@echo "╚══════════════════════════════════════════╝"
 
-setup-hooks: ## 安装 Git hooks（lefthook）
-	@LEFTHOOK_BIN="$$(go env GOPATH)/bin/lefthook"; \
-	if [ ! -f "$$LEFTHOOK_BIN" ]; then \
-		echo "❌ 需要安装 lefthook: go install github.com/evilmartians/lefthook@latest"; \
-		exit 1; \
-	fi; \
-	"$$LEFTHOOK_BIN" install
+setup-hooks: ## 安装 Git hooks（lefthook — 优先 pnpm，其次 go install）
+	@if [ -f "frontend/node_modules/lefthook/bin/lefthook" ]; then \
+		echo "🔗 使用 pnpm lefthook"; \
+		cd frontend && pnpm lefthook install; \
+	elif [ -f "$$(go env GOPATH)/bin/lefthook" ]; then \
+		echo "🔗 使用 Go lefthook"; \
+		"$$(go env GOPATH)/bin/lefthook" install; \
+	else \
+		echo "📦 安装 lefthook..."; \
+		cd frontend && pnpm add -D lefthook && pnpm approve-builds lefthook; \
+	fi
 	@echo "✅ Git hooks 已安装（pre-commit + pre-push）"
 
 # ─── 格式化 ───────────────────────────────────
