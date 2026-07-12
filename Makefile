@@ -86,9 +86,22 @@ lint-go: ## Go linter（同 CI: golangci-lint run ./...）
 	cd petcore && PATH="$$(go env GOPATH)/bin:$$PATH" golangci-lint run ./... --timeout 5m
 
 lint-rust: ## Rust linter + sidecar 构建（同 CI: cargo clippy -- -D warnings）
-	@echo "🔨 构建 sidecar 供 Rust clippy 使用..."
-	@mkdir -p src-tauri/binaries
-	cd petcore && CGO_ENABLED=0 go build -o ../src-tauri/binaries/petcore-x86_64-unknown-linux-gnu ./cmd/petcore/
+	@SIDECAR="src-tauri/binaries/petcore-x86_64-unknown-linux-gnu"; \
+	NEED_BUILD=0; \
+	if [ ! -f "$$SIDECAR" ]; then \
+		NEED_BUILD=1; \
+	elif [ "petcore/cmd/petcore/main.go" -nt "$$SIDECAR" ] 2>/dev/null; then \
+		NEED_BUILD=1; \
+	elif [ "petcore/go.mod" -nt "$$SIDECAR" ] 2>/dev/null; then \
+		NEED_BUILD=1; \
+	fi; \
+	if [ "$$NEED_BUILD" = "1" ]; then \
+		echo "🔨 构建 sidecar 供 Rust clippy 使用..."; \
+		mkdir -p src-tauri/binaries; \
+		cd petcore && CGO_ENABLED=0 go build -o ../src-tauri/binaries/petcore-x86_64-unknown-linux-gnu ./cmd/petcore/; \
+	else \
+		echo "✓ sidecar 已是最新"; \
+	fi
 	cd src-tauri && cargo clippy -- -D warnings
 
 lint-frontend: ## TypeScript linter（同 CI: pnpm lint）

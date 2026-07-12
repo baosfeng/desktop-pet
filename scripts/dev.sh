@@ -16,6 +16,13 @@ command -v go >/dev/null 2>&1 || { echo "❌ 需要安装 Go"; exit 1; }
 command -v pnpm >/dev/null 2>&1 || { echo "❌ 需要安装 pnpm (npm i -g pnpm)"; exit 1; }
 command -v cargo >/dev/null 2>&1 || { echo "❌ 需要安装 Rust"; exit 1; }
 
+# 安装 Git hooks（自动，无需记忆）
+if command -v lefthook >/dev/null 2>&1; then
+  lefthook install >/dev/null 2>&1 && echo "🔗 Git hooks 已就绪"
+elif [ -f "$(go env GOPATH)/bin/lefthook" ]; then
+  "$(go env GOPATH)/bin/lefthook" install >/dev/null 2>&1 && echo "🔗 Git hooks 已就绪"
+fi
+
 # 安装前端依赖
 if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
   echo "📦 安装前端依赖..."
