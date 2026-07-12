@@ -12,21 +12,21 @@ func TestSQLiteManager_NewAndClose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	dbPath := filepath.Join(dir, "test.db")
 	sm, err := NewSQLiteManager(dbPath)
 	if err != nil {
 		t.Fatalf("NewSQLiteManager failed: %v", err)
 	}
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	// 验证表已创建
 	rows, err := sm.db.Query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	tables := make(map[string]bool)
 	for rows.Next() {
@@ -46,7 +46,7 @@ func TestSQLiteManager_NewAndClose(t *testing.T) {
 
 func TestSQLiteManager_ShortTerm(t *testing.T) {
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	sm.AddShortTerm(Message{Role: "user", Content: "hello"})
 	sm.AddShortTerm(Message{Role: "assistant", Content: "hi there"})
@@ -65,7 +65,7 @@ func TestSQLiteManager_ShortTerm(t *testing.T) {
 
 func TestSQLiteManager_ClearShortTerm(t *testing.T) {
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	sm.AddShortTerm(Message{Role: "user", Content: "hello"})
 	sm.ClearShortTerm()
@@ -77,7 +77,7 @@ func TestSQLiteManager_ClearShortTerm(t *testing.T) {
 
 func TestSQLiteManager_RememberRecall(t *testing.T) {
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	err := sm.Remember("user_name", "Alice", 3)
 	if err != nil {
@@ -95,7 +95,7 @@ func TestSQLiteManager_RememberRecall(t *testing.T) {
 
 func TestSQLiteManager_RecallNotFound(t *testing.T) {
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	_, err := sm.Recall("nonexistent")
 	if err == nil {
@@ -105,7 +105,7 @@ func TestSQLiteManager_RecallNotFound(t *testing.T) {
 
 func TestSQLiteManager_RememberUpsert(t *testing.T) {
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	_ = sm.Remember("key1", "value1", 1)
 	_ = sm.Remember("key1", "value2", 5)
@@ -121,7 +121,7 @@ func TestSQLiteManager_RememberUpsert(t *testing.T) {
 
 func TestSQLiteManager_GetAllCore(t *testing.T) {
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	_ = sm.Remember("a", "1", 1)
 	_ = sm.Remember("b", "2", 2)
@@ -141,7 +141,7 @@ func TestSQLiteManager_GetAllCore(t *testing.T) {
 func TestSQLiteManager_StoreAndSearch(t *testing.T) {
 	ctx := context.Background()
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	_ = sm.Store(ctx, Fact{Key: "user_mood", Value: "today is happy", Category: "event", Importance: 3})
 	_ = sm.Store(ctx, Fact{Key: "user_meal", Value: "ate pizza for lunch", Category: "event", Importance: 2})
@@ -167,7 +167,7 @@ func TestSQLiteManager_StoreAndSearch(t *testing.T) {
 func TestSQLiteManager_SearchNoResults(t *testing.T) {
 	ctx := context.Background()
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	results, err := sm.Search(ctx, "nonexistent", 10)
 	if err != nil {
@@ -181,7 +181,7 @@ func TestSQLiteManager_SearchNoResults(t *testing.T) {
 func TestSQLiteManager_SearchLimit(t *testing.T) {
 	ctx := context.Background()
 	sm := newTestSQLite(t)
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	for i := 0; i < 5; i++ {
 		_ = sm.Store(ctx, Fact{Key: "test", Value: "searchable content", Category: "event", Importance: 1})
@@ -199,13 +199,13 @@ func TestSQLiteManager_DefaultDBPath(t *testing.T) {
 	// 临时替换 HOME 以测试默认路径
 	oldHome := os.Getenv("HOME")
 	t.Setenv("HOME", t.TempDir())
-	defer os.Setenv("HOME", oldHome)
+	defer func() { _ = os.Setenv("HOME", oldHome) }()
 
 	sm, err := NewSQLiteManager("")
 	if err != nil {
 		t.Fatalf("NewSQLiteManager with empty path failed: %v", err)
 	}
-	defer sm.Close()
+	defer func() { _ = sm.Close() }()
 
 	// 验证数据文件已创建
 	home, _ := os.UserHomeDir()
@@ -222,13 +222,13 @@ func newTestSQLite(t *testing.T) *SQLiteManager {
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
-	t.Cleanup(func() { os.RemoveAll(dir) })
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 
 	dbPath := filepath.Join(dir, "test.db")
 	sm, err := NewSQLiteManager(dbPath)
 	if err != nil {
 		t.Fatalf("NewSQLiteManager failed: %v", err)
 	}
-	t.Cleanup(func() { sm.Close() })
+	t.Cleanup(func() { _ = sm.Close() })
 	return sm
 }

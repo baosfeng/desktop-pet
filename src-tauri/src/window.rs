@@ -163,7 +163,7 @@ fn load_window_position(app: &App) -> Result<Position, Box<dyn std::error::Error
 
 /// 设置窗口透明度。
 ///
-/// 通过向 WebView 注入 CSS 实现（Tauri v2 无原生 set_opacity）。
+/// 通过向 `WebView` 注入 CSS 实现（Tauri v2 无原生 `set_opacity`）。
 /// `opacity` 取值范围 0.1–1.0，超出范围自动 clamp。
 ///
 /// # Errors

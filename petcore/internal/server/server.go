@@ -107,66 +107,81 @@ func (s *Server) Run(ctx context.Context) error {
 func (s *Server) handleCommand(ctx context.Context, cmd Command) {
 	switch cmd.Method {
 	case "ping":
-		s.writeResult(cmd.ID, map[string]string{"pong": "ok"})
-
+		s.handlePing(cmd)
 	case "chat":
-		var params struct {
-			Text string `json:"text"`
-		}
-		if err := json.Unmarshal(cmd.Params, &params); err != nil {
-			s.writeError(cmd.ID, fmt.Sprintf("invalid params: %v", err))
-			return
-		}
-		if err := s.engine.HandleInput(ctx, params.Text); err != nil {
-			s.writeErrorEvent(err.Error())
-			s.writeError(cmd.ID, err.Error())
-			return
-		}
-		s.writeResult(cmd.ID, map[string]bool{"done": true})
-
+		s.handleChat(ctx, cmd)
 	case "update_config":
-		var params struct {
-			APIKey       string `json:"apiKey"`
-			Provider     string `json:"provider"`
-			BaseURL      string `json:"baseUrl"`
-			ModelName    string `json:"modelName"`
-			SystemPrompt string `json:"systemPrompt"`
-		}
-		if err := json.Unmarshal(cmd.Params, &params); err != nil {
-			s.writeError(cmd.ID, fmt.Sprintf("invalid params: %v", err))
-			return
-		}
-		if err := s.engine.UpdateLLMConfig(params.Provider, params.APIKey, params.BaseURL, params.ModelName, params.SystemPrompt); err != nil {
-			s.writeError(cmd.ID, err.Error())
-			return
-		}
-		s.log.Info("LLM config updated", "provider", params.Provider, "model", params.ModelName, "base_url", params.BaseURL)
-		s.writeResult(cmd.ID, map[string]bool{"done": true})
-
+		s.handleUpdateConfig(cmd)
 	case "verify_api_key":
-		var vp struct {
-			APIKey    string `json:"apiKey"`
-			Provider  string `json:"provider"`
-			BaseURL   string `json:"baseUrl"`
-			ModelName string `json:"modelName"`
-		}
-		if err := json.Unmarshal(cmd.Params, &vp); err != nil {
-			s.writeError(cmd.ID, fmt.Sprintf("invalid params: %v", err))
-			return
-		}
-		if err := s.engine.VerifyAPIKey(vp.Provider, vp.APIKey, vp.BaseURL, vp.ModelName); err != nil {
-			s.writeError(cmd.ID, err.Error())
-			return
-		}
-		s.writeResult(cmd.ID, map[string]bool{"valid": true})
-
+		s.handleVerifyAPIKey(cmd)
 	case "get_status":
-		status := s.engine.GetStatus()
-		s.writeResult(cmd.ID, status)
-
+		s.handleGetStatus(cmd)
 	default:
 		s.writeError(cmd.ID, fmt.Sprintf("unknown method: %s", cmd.Method))
 	}
+}
+
+func (s *Server) handlePing(cmd Command) {
+	s.writeResult(cmd.ID, map[string]string{"pong": "ok"})
+}
+
+func (s *Server) handleChat(ctx context.Context, cmd Command) {
+	var params struct {
+		Text string `json:"text"`
+	}
+	if err := json.Unmarshal(cmd.Params, &params); err != nil {
+		s.writeError(cmd.ID, fmt.Sprintf("invalid params: %v", err))
+		return
+	}
+	if err := s.engine.HandleInput(ctx, params.Text); err != nil {
+		s.writeErrorEvent(err.Error())
+		s.writeError(cmd.ID, err.Error())
+		return
+	}
+	s.writeResult(cmd.ID, map[string]bool{"done": true})
+}
+
+func (s *Server) handleUpdateConfig(cmd Command) {
+	var params struct {
+		APIKey       string `json:"apiKey"`
+		Provider     string `json:"provider"`
+		BaseURL      string `json:"baseUrl"`
+		ModelName    string `json:"modelName"`
+		SystemPrompt string `json:"systemPrompt"`
+	}
+	if err := json.Unmarshal(cmd.Params, &params); err != nil {
+		s.writeError(cmd.ID, fmt.Sprintf("invalid params: %v", err))
+		return
+	}
+	if err := s.engine.UpdateLLMConfig(params.Provider, params.APIKey, params.BaseURL, params.ModelName, params.SystemPrompt); err != nil {
+		s.writeError(cmd.ID, err.Error())
+		return
+	}
+	s.log.Info("LLM config updated", "provider", params.Provider, "model", params.ModelName, "base_url", params.BaseURL)
+	s.writeResult(cmd.ID, map[string]bool{"done": true})
+}
+
+func (s *Server) handleVerifyAPIKey(cmd Command) {
+	var vp struct {
+		APIKey    string `json:"apiKey"`
+		Provider  string `json:"provider"`
+		BaseURL   string `json:"baseUrl"`
+		ModelName string `json:"modelName"`
+	}
+	if err := json.Unmarshal(cmd.Params, &vp); err != nil {
+		s.writeError(cmd.ID, fmt.Sprintf("invalid params: %v", err))
+		return
+	}
+	if err := s.engine.VerifyAPIKey(vp.Provider, vp.APIKey, vp.BaseURL, vp.ModelName); err != nil {
+		s.writeError(cmd.ID, err.Error())
+		return
+	}
+	s.writeResult(cmd.ID, map[string]bool{"valid": true})
+}
+
+func (s *Server) handleGetStatus(cmd Command) {
+	status := s.engine.GetStatus()
+	s.writeResult(cmd.ID, status)
 }
 
 func (s *Server) writeResult(id string, result any) {

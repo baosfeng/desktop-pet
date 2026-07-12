@@ -278,7 +278,7 @@ func runCLI(ctx context.Context, eng *core.Engine) {
 	}
 }
 
-func handleCLICommand(ctx context.Context, line string, eng *core.Engine) bool {
+func handleCLICommand(_ context.Context, line string, eng *core.Engine) bool {
 	parts := strings.Fields(line)
 	if len(parts) == 0 {
 		return true

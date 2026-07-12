@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // SQLite driver registration (blank import required by database/sql)
 )
 
 // SQLiteManager 是 Manager 的 SQLite 持久化实现。
@@ -37,7 +37,7 @@ func NewSQLiteManager(dbPath string) (*SQLiteManager, error) {
 
 	// 确保目录存在
 	dir := filepath.Dir(dbPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return nil, fmt.Errorf("memory: cannot create data dir %s: %w", dir, err)
 	}
 
@@ -53,7 +53,7 @@ func NewSQLiteManager(dbPath string) (*SQLiteManager, error) {
 
 	sm := &SQLiteManager{db: db}
 	if err := sm.migrate(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("memory: migration failed: %w", err)
 	}
 
@@ -147,7 +147,7 @@ func (sm *SQLiteManager) GetShortTerm() []Message {
 	if err != nil {
 		return nil
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var msgs []Message
 	for rows.Next() {
@@ -200,7 +200,7 @@ func (sm *SQLiteManager) GetAllCore() (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("memory: GetAllCore error: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	out := make(map[string]string)
 	for rows.Next() {
@@ -266,7 +266,7 @@ func (sm *SQLiteManager) queryFacts(q string, args ...any) ([]Fact, error) {
 	if err != nil {
 		return nil, fmt.Errorf("memory: Search error: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var facts []Fact
 	for rows.Next() {
