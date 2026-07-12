@@ -9,7 +9,7 @@ export interface Message {
   timestamp: number;
 }
 
-interface Settings {
+export interface Settings {
   apiKey: string;
   baseUrl: string;
   modelName: string;

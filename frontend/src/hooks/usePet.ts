@@ -2,6 +2,7 @@ import { useCallback, useEffect } from "react";
 
 import { type PetEvent, onPetEvent, sendMessage } from "@/lib/bridge";
 import { generateId, usePetStore } from "@/stores/petStore";
+import type { Message, Settings } from "@/stores/petStore";
 
 /**
  * usePetState — 监听 Tauri pet:event 事件，自动更新宠物状态和消息。
@@ -45,7 +46,7 @@ export function usePetEvent(): void {
 /**
  * useChat — 发送消息和消息列表。
  */
-export function useChat() {
+export function useChat(): { messages: Message[]; sendMessage: (text: string) => void } {
   const messages = usePetStore((s) => s.messages);
   const addMessage = usePetStore((s) => s.addMessage);
 
@@ -79,7 +80,14 @@ export function useChat() {
 /**
  * useSettings — 设置面板状态和操作。
  */
-export function useSettings() {
+export function useSettings(): {
+  settings: Settings;
+  updateSettings: (partial: Partial<Settings>) => void;
+  showSettings: boolean;
+  toggleSettings: () => void;
+  handleSave: () => void;
+  handleClose: () => void;
+} {
   const settings = usePetStore((s) => s.settings);
   const updateSettings = usePetStore((s) => s.updateSettings);
   const saveSettings = usePetStore((s) => s.saveSettings);

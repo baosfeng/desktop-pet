@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-/* eslint-disable import/first */
 import { SettingsPanel } from "./components/SettingsPanel";
 
 const { mockStore } = vi.hoisted(() => {
