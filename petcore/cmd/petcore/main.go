@@ -67,7 +67,7 @@ func main() {
 	}
 
 	// 初始化各模块
-	engine := buildEngine(cfg)
+	engine := buildEngine(cfg, runEnv)
 
 	// 信号处理
 	ctx, cancel := context.WithCancel(context.Background())
@@ -88,7 +88,7 @@ func main() {
 	}
 }
 
-func buildEngine(cfg *config.Config) *core.Engine {
+func buildEngine(cfg *config.Config, runEnv config.Environment) *core.Engine {
 	// LLM Provider
 	provider, err := llm.NewProvider(cfg.LLM.Provider, map[string]any{
 		"model":    cfg.LLM.Model,
@@ -104,7 +104,19 @@ func buildEngine(cfg *config.Config) *core.Engine {
 	machine := fsm.NewMockMachine(fsm.StateIdle)
 
 	// Memory
-	mem := memory.NewInMemoryManager()
+	var mem memory.Manager
+	if runEnv == config.EnvProduction {
+		var err error
+		mem, err = memory.NewSQLiteManager("")
+		if err != nil {
+			log.Error("failed to create SQLite memory, falling back to in-memory", "error", err)
+			mem = memory.NewInMemoryManager()
+		}
+		log.Info("using SQLite persistent memory", "env", runEnv)
+	} else {
+		mem = memory.NewInMemoryManager()
+		log.Info("using in-memory memory", "env", runEnv)
+	}
 
 	// Tool Registry
 	toolReg := tool.NewRegistry()

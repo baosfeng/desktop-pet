@@ -154,6 +154,11 @@ func (e *Engine) GetStatus() map[string]any {
 	}
 }
 
+// GetShortTerm 返回短期记忆内容。
+func (e *Engine) GetShortTerm() []memory.Message {
+	return e.memory.GetShortTerm()
+}
+
 // SetSink 设置引擎的事件消费者，用于 sidecar 模式下替换默认 sink。
 // 同步设置 Agent 的 sink，确保 Agent Pipeline 发出的事件（agent.reply 等）
 // 也能通过同一个 sink 发送出去。
