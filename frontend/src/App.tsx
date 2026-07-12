@@ -25,11 +25,18 @@ export default function App(): React.JSX.Element {
   const { showSettings, toggleSettings } = useSettings();
   const theme = usePetStore((s) => s.settings.theme);
   const opacity = usePetStore((s) => s.settings.opacity);
+  const hasCompletedOnboarding = usePetStore((s) => s.settings.hasCompletedOnboarding);
   const updateSettings = usePetStore((s) => s.updateSettings);
   const saveSettings = usePetStore((s) => s.saveSettings);
 
   const addMessage = usePetStore((s) => s.addMessage);
   const setPetState = usePetStore((s) => s.setPetState);
+  const loadApiKey = usePetStore((s) => s.loadApiKey);
+
+  // 启动时从安全存储加载 API Key
+  useEffect(() => {
+    void loadApiKey();
+  }, [loadApiKey]);
 
   // 互动超时计时器（用于恢复 idle 状态）
   const interactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -41,10 +48,12 @@ export default function App(): React.JSX.Element {
     const canvas = document.getElementById("live2d-canvas") as HTMLCanvasElement | null;
     if (!canvas) return;
 
-    // 使用 Live2D 官方示例模型 Haru（CDN 加载）
-    // 模型许可：https://www.live2d.com/eula/live2d-free-material-license-agreement_en.html
+    // 模型路径：优先使用用户设置，没有则使用默认 CDN Haru
+    const storedPath = usePetStore.getState().settings.modelPath;
     const modelPath =
+      storedPath ||
       "https://cdn.jsdelivr.net/gh/Live2D/CubismWebSamples@develop/Samples/Resources/Haru/Haru.model3.json";
+    // 模型许可：https://www.live2d.com/eula/live2d-free-material-license-agreement_en.html
     void initLive2D(canvas, {
       modelPath,
       scale: 0.5,
@@ -223,6 +232,9 @@ export default function App(): React.JSX.Element {
           🎮 互动
         </button>
       </div>
+
+      {/* 新手引导 */}
+      {!hasCompletedOnboarding && <OnboardingDialog />}
 
       {/* 设置面板 */}
       {showSettings && <SettingsPanel onClose={toggleSettings} />}

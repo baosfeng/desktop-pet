@@ -14,6 +14,7 @@ fn main() {
 
     if let Err(e) = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .setup(|app| {
             // 创建并配置宠物窗口
             window::create_pet_window(app)?;
@@ -39,6 +40,7 @@ fn main() {
             commands::chat,
             commands::get_status,
             commands::update_config,
+            commands::verify_api_key,
             commands::log_from_frontend,
         ])
         .run(tauri::generate_context!())

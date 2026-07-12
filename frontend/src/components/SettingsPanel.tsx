@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 
-import { setWindowOpacity, updateConfig } from "@/lib/bridge";
+import { setWindowOpacity, updateConfig, verifyApiKey as bridgeVerifyApiKey } from "@/lib/bridge";
 
 import { usePetStore } from "@/stores/petStore";
 
@@ -25,35 +25,16 @@ async function verifyApiKey(
   modelName: string,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [{ role: "user", content: "ping" }],
-        max_tokens: 1,
-      }),
+    await bridgeVerifyApiKey({
+      apiKey,
+      provider: "",
+      baseUrl,
+      modelName,
+      systemPrompt: "",
     });
-
-    if (res.ok) return { ok: true };
-
-    if (res.status === 401 || res.status === 403) {
-      return { ok: false, message: "API Key 无效或已过期" };
-    }
-
-    const rawBody: unknown = await res.json().catch(() => null);
-    const body = rawBody as Record<string, unknown> | null;
-    const errObj = body?.error as Record<string, unknown> | undefined;
-    const detail =
-      (errObj?.message as string | undefined) ??
-      (body?.message as string | undefined) ??
-      `HTTP ${String(res.status)}`;
-    return { ok: false, message: detail };
+    return { ok: true };
   } catch (err: unknown) {
-    const msg = err instanceof TypeError ? "无法连接到服务器，请检查网络或接口地址" : String(err);
+    const msg = err instanceof Error ? err.message : String(err);
     return { ok: false, message: msg };
   }
 }
@@ -158,6 +139,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
   const handleSave = useCallback(() => {
     updateSettings(form);
     saveSettings();
+    usePetStore.getState().saveApiKey();
     void updateConfig({
       apiKey: form.apiKey,
       provider: form.provider,
