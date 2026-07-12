@@ -80,16 +80,36 @@ bench: ## 运行 Go 基准测试
 
 # ─── Lint ─────────────────────────────────────
 
-lint: lint-go lint-rust lint-frontend ## 运行全部 linter
+lint: lint-go lint-rust lint-frontend ## 运行全部 linter（同 CI lint）
 
-lint-go: ## Go linter
-	cd petcore && golangci-lint run ./... --timeout 5m
+lint-go: ## Go linter（同 CI: golangci-lint run ./...）
+	cd petcore && PATH="$$(go env GOPATH)/bin:$$PATH" golangci-lint run ./... --timeout 5m
 
-lint-rust: ## Rust linter
+lint-rust: ## Rust linter + sidecar 构建（同 CI: cargo clippy -- -D warnings）
+	@echo "🔨 构建 sidecar 供 Rust clippy 使用..."
+	@mkdir -p src-tauri/binaries
+	cd petcore && CGO_ENABLED=0 go build -o ../src-tauri/binaries/petcore-x86_64-unknown-linux-gnu ./cmd/petcore/
 	cd src-tauri && cargo clippy -- -D warnings
 
-lint-frontend: ## TypeScript linter
+lint-frontend: ## TypeScript linter（同 CI: pnpm lint）
 	cd frontend && pnpm lint
+
+# ─── 推送前检查（拦截 CI 失败）────────────
+
+pre-push: lint build-petcore ## 推送前运行：lint + PetCore 编译（同 CI lint 阶段）
+	@echo ""
+	@echo "╔══════════════════════════════════════════╗"
+	@echo "║  ✅  所有检查通过，可以推送！           ║"
+	@echo "╚══════════════════════════════════════════╝"
+
+setup-hooks: ## 安装 Git hooks（lefthook）
+	@LEFTHOOK_BIN="$$(go env GOPATH)/bin/lefthook"; \
+	if [ ! -f "$$LEFTHOOK_BIN" ]; then \
+		echo "❌ 需要安装 lefthook: go install github.com/evilmartians/lefthook@latest"; \
+		exit 1; \
+	fi; \
+	"$$LEFTHOOK_BIN" install
+	@echo "✅ Git hooks 已安装（pre-commit + pre-push）"
 
 # ─── 格式化 ───────────────────────────────────
 

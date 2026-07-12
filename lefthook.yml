@@ -89,3 +89,17 @@ post-commit:
       glob: "*.go"
       run: go test ./...
       fail_text: "⚠️  Go 测试失败，请修复！"
+
+# pre-push 钩子：推送前运行完整 lint（与 CI 完全一致）
+# 确保本地 lint 通过 = CI lint 通过，避免浪费 CI 分钟
+pre-push:
+  parallel: false
+  commands:
+    ci-lint-simulate:
+      run: make pre-push
+      description: "模拟 CI lint 检查（golangci-lint + cargo clippy + pnpm lint）"
+      fail_text: |-
+        ❌ pre-push 检查未通过！
+          本地 lint 失败意味着 CI 也会失败。
+          请修复错误后重新 git push。
+          如需跳过（不推荐）：git push --no-verify
