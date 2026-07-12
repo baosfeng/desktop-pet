@@ -146,9 +146,6 @@ func (e *Engine) UpdateLLMConfig(provider, apiKey, baseURL, model, systemPrompt 
 	if providerName == "" {
 		providerName = e.cfg.LLM.Provider
 	}
-	if providerName == "mock" {
-		providerName = "openai"
-	}
 
 	// 更新 provider 和 system prompt 到 config
 	e.cfg.LLM.Provider = providerName
