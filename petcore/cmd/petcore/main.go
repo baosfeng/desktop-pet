@@ -6,10 +6,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
+	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/desktop-pet/petcore/internal/agent"
@@ -163,8 +167,153 @@ func runSidecar(ctx context.Context, eng *core.Engine) {
 	}
 }
 
-func runCLI(ctx context.Context, _ *core.Engine) {
-	log.Info("PetCore CLI mode (not yet implemented)")
-	log.Info("Run with --cli to enter interactive mode")
-	<-ctx.Done()
+// ─── CLI 模式 ─────────────────────────────────
+
+// cliSink 捕获 Agent 事件并在终端显示。
+type cliSink struct {
+	mu            sync.Mutex
+	replyBuilder  strings.Builder
+	streamingDone chan struct{}
+}
+
+func (s *cliSink) Send(e event.Event) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch e.Kind {
+	case event.EventAgentThinking:
+		fmt.Print("🤔 ")
+	case event.EventAgentReply:
+		if data, ok := e.Data.(map[string]any); ok {
+			if text, ok := data["text"].(string); ok {
+				s.replyBuilder.WriteString(text)
+				fmt.Print(text)
+			}
+			if done, ok := data["done"].(bool); ok && done {
+				fmt.Println()
+				close(s.streamingDone)
+			}
+		}
+	case event.EventError:
+		if data, ok := e.Data.(map[string]any); ok {
+			if msg, ok := data["error"].(string); ok {
+				fmt.Fprintf(os.Stderr, "\n❌ 错误: %s\n", msg)
+			}
+		}
+	case event.EventStateChanged:
+		if data, ok := e.Data.(map[string]any); ok {
+			if state, ok := data["state"].(string); ok {
+				fmt.Fprintf(os.Stderr, "\n🐾 状态: %s\n", state)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *cliSink) Close() error { return nil }
+
+func runCLI(ctx context.Context, eng *core.Engine) {
+	fmt.Println("🐾 PetCore CLI - 桌面 AI 宠物交互终端")
+	fmt.Println("   输入消息开始对话，输入 /help 查看命令列表")
+	fmt.Println()
+
+	sink := &cliSink{streamingDone: make(chan struct{})}
+	eng.SetSink(sink)
+
+	// 启动引擎事件循环（goroutine）
+	go func() {
+		if err := eng.Run(ctx); err != nil {
+			log.Error("engine run error", "error", err)
+		}
+	}()
+
+	scanner := bufio.NewScanner(os.Stdin)
+	prompt := "你 > "
+
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("\n再见！👋")
+			return
+		default:
+		}
+
+		fmt.Print(prompt)
+		if !scanner.Scan() {
+			return
+		}
+
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		// 处理命令
+		if strings.HasPrefix(line, "/") {
+			if !handleCLICommand(ctx, line, eng) {
+				return
+			}
+			continue
+		}
+
+		// 处理对话
+		fmt.Print("🐱 ")
+		sink.streamingDone = make(chan struct{})
+		sink.mu.Lock()
+		sink.replyBuilder.Reset()
+		sink.mu.Unlock()
+
+		if err := eng.HandleInput(ctx, line); err != nil {
+			fmt.Fprintf(os.Stderr, "\n❌ 处理消息失败: %v\n", err)
+		}
+
+		// 等待流式回复完成
+		select {
+		case <-sink.streamingDone:
+		case <-ctx.Done():
+			return
+		}
+
+		fmt.Println()
+	}
+}
+
+func handleCLICommand(ctx context.Context, line string, eng *core.Engine) bool {
+	parts := strings.Fields(line)
+	if len(parts) == 0 {
+		return true
+	}
+
+	switch parts[0] {
+	case "/help":
+		fmt.Println("可用命令:")
+		fmt.Println("  /help      - 显示此帮助")
+		fmt.Println("  /clear     - 清屏")
+		fmt.Println("  /status    - 查看引擎状态")
+		fmt.Println("  /memory    - 查看短期记忆")
+		fmt.Println("  /exit      - 退出")
+	case "/clear":
+		fmt.Print("\033[H\033[2J")
+	case "/status":
+		status := eng.GetStatus()
+		fmt.Printf("状态: %v\n", status["state"])
+		fmt.Printf("插件数: %v\n", status["plugins"])
+		fmt.Printf("工具数: %v\n", status["tools"])
+	case "/memory":
+		msgs := eng.GetShortTerm()
+		if len(msgs) == 0 {
+			fmt.Println("暂无短期记忆")
+		} else {
+			fmt.Printf("短期记忆 (%d 条):\n", len(msgs))
+			for _, m := range msgs {
+				fmt.Printf("  [%s] %s\n", m.Role, m.Content)
+			}
+		}
+	case "/exit", "/quit":
+		fmt.Println("再见！👋")
+		return false
+	default:
+		fmt.Printf("未知命令: %s（输入 /help 查看帮助）\n", parts[0])
+	}
+	return true
 }
