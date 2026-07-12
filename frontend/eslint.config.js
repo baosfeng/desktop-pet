@@ -13,7 +13,7 @@ import tseslint from "typescript-eslint";
 // eslint-disable-next-line @typescript-eslint/no-deprecated
 export default tseslint.config(
   // 全局忽略
-  { ignores: ["dist/", ".vite/", "node_modules/"] },
+  { ignores: ["dist/", ".vite/", "node_modules/", "public/"] },
 
   // 基础 JS 推荐规则
   js.configs.recommended,
