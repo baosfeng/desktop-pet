@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import type React from "react";
 
 import { usePetStore } from "@/stores/petStore";
+import { updateConfig } from "@/lib/bridge";
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -23,8 +24,19 @@ export function SettingsPanel({ onClose }: SettingsPanelProps): React.JSX.Elemen
   );
 
   const handleSave = useCallback(() => {
+    // 更新 store 并保存到 localStorage
     updateSettings(form);
     saveSettings();
+
+    // 将 LLM 设置同步到 PetCore 后端
+    const llmConfig = {
+      apiKey: form.apiKey,
+      baseUrl: form.baseUrl,
+      modelName: form.modelName,
+      systemPrompt: form.persona,
+    };
+    void updateConfig(llmConfig);
+
     onClose();
   }, [form, updateSettings, saveSettings, onClose]);
 

@@ -70,6 +70,22 @@ pub fn get_status(app_handle: AppHandle) -> tauri::Result<serde_json::Value> {
     Ok(serde_json::json!({"state": "offline"}))
 }
 
+/// 更新 `PetCore` LLM 配置（API Key / Base URL / Model / System Prompt）
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
+pub fn update_config(app_handle: AppHandle, config: serde_json::Value) -> tauri::Result<()> {
+    if let Some(writer) = app_handle.try_state::<crate::sidecar::SidecarWriter>() {
+        let cmd = serde_json::json!({
+            "type": "cmd",
+            "id": format!("config-{}", SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis()),
+            "method": "update_config",
+            "params": config
+        });
+        writer.send(&cmd.to_string());
+    }
+    Ok(())
+}
+
 /// 从前端接收日志（调试用）
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]

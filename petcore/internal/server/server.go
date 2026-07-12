@@ -114,6 +114,24 @@ func (s *Server) handleCommand(ctx context.Context, cmd Command) {
 		}
 		s.writeResult(cmd.ID, map[string]bool{"done": true})
 
+	case "update_config":
+		var params struct {
+			APIKey       string `json:"apiKey"`
+			BaseURL      string `json:"baseUrl"`
+			ModelName    string `json:"modelName"`
+			SystemPrompt string `json:"systemPrompt"`
+		}
+		if err := json.Unmarshal(cmd.Params, &params); err != nil {
+			s.writeError(cmd.ID, fmt.Sprintf("invalid params: %v", err))
+			return
+		}
+		if err := s.engine.UpdateLLMConfig(params.APIKey, params.BaseURL, params.ModelName, params.SystemPrompt); err != nil {
+			s.writeError(cmd.ID, err.Error())
+			return
+		}
+		s.log.Info("LLM config updated", "model", params.ModelName, "base_url", params.BaseURL)
+		s.writeResult(cmd.ID, map[string]bool{"done": true})
+
 	case "get_status":
 		status := s.engine.GetStatus()
 		s.writeResult(cmd.ID, status)

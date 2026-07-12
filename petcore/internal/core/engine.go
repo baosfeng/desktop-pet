@@ -126,3 +126,39 @@ func (e *Engine) SetSink(sink event.Sink) {
 	}
 	e.sink = sink
 }
+
+// UpdateLLMConfig 热更新 LLM Provider 配置（API Key / Base URL / Model / System Prompt）。
+// 由 update_config 命令触发，用户从设置面板保存时调用。
+func (e *Engine) UpdateLLMConfig(apiKey, baseURL, model, systemPrompt string) error {
+	// 确定 provider 名称：如果当前是 mock，切换到 openai（兼容所有 OpenAI 兼容 API）
+	providerName := e.cfg.LLM.Provider
+	if providerName == "mock" {
+		providerName = "openai"
+	}
+
+	// 更新 system prompt
+	if systemPrompt != "" {
+		e.cfg.Agent.SystemPrompt = systemPrompt
+	}
+
+	// 构建新 Provider 配置
+	cfgMap := map[string]any{}
+	if apiKey != "" {
+		cfgMap["api_key"] = apiKey
+	}
+	if baseURL != "" {
+		cfgMap["base_url"] = baseURL
+	}
+	if model != "" {
+		cfgMap["model"] = model
+	}
+
+	provider, err := llm.NewProvider(providerName, cfgMap)
+	if err != nil {
+		return fmt.Errorf("engine: update LLM config: %w", err)
+	}
+
+	e.agent.SetProvider(provider)
+	e.log.Info("LLM provider hot-updated", "provider", providerName, "model", model, "base_url", baseURL)
+	return nil
+}

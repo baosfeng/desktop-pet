@@ -36,6 +36,7 @@ fn main() {
             commands::set_window_position,
             commands::chat,
             commands::get_status,
+            commands::update_config,
             commands::log_from_frontend,
         ])
         .run(tauri::generate_context!())

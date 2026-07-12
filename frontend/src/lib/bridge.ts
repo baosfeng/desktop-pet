@@ -25,6 +25,17 @@ export async function getStatus(): Promise<Record<string, unknown>> {
   return await invoke("get_status");
 }
 
+export interface LLMConfig {
+  apiKey: string;
+  baseUrl: string;
+  modelName: string;
+  systemPrompt: string;
+}
+
+export async function updateConfig(config: LLMConfig): Promise<void> {
+  await invoke("update_config", { config });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Tauri Events                                                       */
 /* ------------------------------------------------------------------ */

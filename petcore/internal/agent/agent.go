@@ -23,6 +23,9 @@ type Agent interface {
 
 	// SetSink 设置事件输出 Sink（Agent 通过 Sink 发送流式回复等事件）。
 	SetSink(sink event.Sink)
+
+	// SetProvider 热替换 LLM Provider（配置更新时调用）。
+	SetProvider(provider llm.Provider)
 }
 
 // Request 是 Agent 的输入请求。
@@ -77,6 +80,13 @@ func (a *agentImpl) SetSink(sink event.Sink) {
 		sink = event.NoopSink{}
 	}
 	a.sink = sink
+}
+
+// SetProvider 热替换 LLM Provider。
+func (a *agentImpl) SetProvider(provider llm.Provider) {
+	if provider != nil {
+		a.provider = provider
+	}
 }
 
 func (a *agentImpl) Run(ctx context.Context, req Request) error {
