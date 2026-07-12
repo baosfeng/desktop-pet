@@ -115,8 +115,8 @@ export default tseslint.config(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
 
-      // 必须显式定义返回值类型
-      "@typescript-eslint/explicit-function-return-type": "warn",
+      // 必须显式定义返回值类型（仅导出函数，内部函数由 TS 推断）
+      "@typescript-eslint/explicit-function-return-type": ["warn", { allowExpressions: true, allowedNames: [] }],
 
       // 禁止 require（使用 import）
       "@typescript-eslint/no-require-imports": "error",
