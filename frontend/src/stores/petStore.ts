@@ -9,6 +9,8 @@ export interface Message {
   timestamp: number;
 }
 
+export type Theme = "pastoral" | "dark";
+
 export interface Settings {
   apiKey: string;
   provider: string;
@@ -16,6 +18,7 @@ export interface Settings {
   modelName: string;
   persona: string;
   opacity: number;
+  theme: Theme;
 }
 
 interface PetStore {
@@ -38,9 +41,30 @@ interface PetStore {
   // 设置面板可见性
   showSettings: boolean;
   toggleSettings: () => void;
+
+  // Live2D Application 引用（用于 hook 触发动画）
+  live2dApp: unknown;
+  setLive2dApp: (app: unknown) => void;
 }
 
 const STORAGE_KEY = "desktop-pet-settings";
+const MSG_STORAGE_KEY = "desktop-pet-messages";
+const MAX_MESSAGES = 200;
+
+function loadMessagesFromStorage(): Message[] {
+  try {
+    const raw = localStorage.getItem(MSG_STORAGE_KEY);
+    if (raw !== null) {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return (parsed as Message[]).slice(-MAX_MESSAGES);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return [];
+}
 
 const DEFAULT_SETTINGS: Settings = {
   apiKey: "",
@@ -49,6 +73,7 @@ const DEFAULT_SETTINGS: Settings = {
   modelName: "deepseek-v4-flash",
   persona: "你是一只可爱的桌面宠物，性格活泼友善。",
   opacity: 0.9,
+  theme: "pastoral",
 };
 
 let msgCounter = 0;
@@ -77,9 +102,9 @@ export const usePetStore = create<PetStore>((set, get) => ({
   setPetState: (state) => { set({ petState: state }); },
 
   // Messages
-  messages: [],
+  messages: loadMessagesFromStorage(),
   addMessage: (msg) => {
-    set((state) => ({ messages: [...state.messages, msg] }));
+    set((state) => ({ messages: [...state.messages, msg].slice(-MAX_MESSAGES) }));
   },
 
   appendToLastAssistant: (text) => {
@@ -112,4 +137,28 @@ export const usePetStore = create<PetStore>((set, get) => ({
   // Settings panel
   showSettings: false,
   toggleSettings: () => { set((state) => ({ showSettings: !state.showSettings })); },
+
+  // Live2D
+  live2dApp: null,
+  setLive2dApp: (app) => { set({ live2dApp: app }); },
 }));
+
+// --- 消息持久化：debounce 500ms 写入 localStorage ---
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+usePetStore.subscribe(
+  (state: PetStore) => state.messages,
+  (messages: Message[]) => {
+    if (saveTimer !== null) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try {
+        const trimmed = messages.length > MAX_MESSAGES
+          ? messages.slice(-MAX_MESSAGES)
+          : messages;
+        localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(trimmed));
+      } catch {
+        // ignore
+      }
+    }, 500);
+  },
+);

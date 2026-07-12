@@ -1,39 +1,112 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { type PetEvent, onPetEvent, sendMessage, updateConfig } from "@/lib/bridge";
+import { setModelExpression, setModelMotion } from "@/lib/live2d";
 import { generateId, usePetStore } from "@/stores/petStore";
-import type { Message, Settings } from "@/stores/petStore";
+import type { Message, PetState, Settings } from "@/stores/petStore";
 
 /**
- * usePetState — 监听 Tauri pet:event 事件，自动更新宠物状态和消息。
+ * 根据宠物状态触发对应的 Live2D 表情和动作。
+ * app 不存在或模型不支持对应动画时静默跳过。
+ */
+function triggerLive2DForState(app: unknown, state: PetState): void {
+  switch (state) {
+    case "speaking":
+      void setModelMotion(app as Parameters<typeof setModelMotion>[0], "FlickHead", 0);
+      void setModelExpression(app as Parameters<typeof setModelExpression>[0], "f01");
+      break;
+    case "attention":
+      void setModelMotion(app as Parameters<typeof setModelMotion>[0], "TapBody", 0);
+      break;
+    case "interaction":
+      void setModelMotion(app as Parameters<typeof setModelMotion>[0], "Pinch", 0);
+      break;
+    case "idle":
+      // idle 不在此处处理，由 usePetEvent 中的随机间隔管理
+      break;
+  }
+}
+
+/**
+ * usePetState — 监听 Tauri pet:event 事件，自动更新宠物状态和消息，
+ * 并联动 Live2D 表情/动作。
  */
 export function usePetEvent(): void {
   const setPetState = usePetStore((s) => s.setPetState);
   const addMessage = usePetStore((s) => s.addMessage);
   const appendToLastAssistant = usePetStore((s) => s.appendToLastAssistant);
 
+  // 待机随机小动作定时器
+  const idleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearIdleInterval = useCallback(() => {
+    if (idleIntervalRef.current !== null) {
+      clearInterval(idleIntervalRef.current);
+      idleIntervalRef.current = null;
+    }
+  }, []);
+
+  const startIdleInterval = useCallback(() => {
+    clearIdleInterval();
+    idleIntervalRef.current = setInterval(() => {
+      const app = usePetStore.getState().live2dApp;
+      if (app) {
+        void setModelMotion(app as Parameters<typeof setModelMotion>[0], "Shake", 0);
+      }
+    }, 5000 + Math.random() * 10000); // 5-15 秒随机间隔
+  }, [clearIdleInterval]);
+
   useEffect(() => {
     const unlistenPromise = onPetEvent((event: PetEvent) => {
+      // 通过 store 获取最新的 live2dApp 引用
+      const app = usePetStore.getState().live2dApp;
+
       // 将事件种类映射为宠物可视化状态
       switch (event.kind) {
         case "state.changed":
           // 从 data.state 提取实际 FSM 状态（idle / attention / interaction / speaking）
           if (typeof event.data.state === "string") {
-            setPetState(event.data.state as Parameters<typeof setPetState>[0]);
+            const newState = event.data.state as Parameters<typeof setPetState>[0];
+            setPetState(newState);
+
+            // 联动 Live2D 动画
+            if (app) {
+              triggerLive2DForState(app, newState);
+              // 管理 idle 随机动作定时器
+              if (newState === "idle") {
+                startIdleInterval();
+              } else {
+                clearIdleInterval();
+              }
+            }
           }
           break;
         case "agent.thinking":
           // 思考中 → 关注状态
-          setPetState(event.data.status === true ? "attention" : "idle");
+          {
+            const thinking = event.data.status === true;
+            setPetState(thinking ? "attention" : "idle");
+            if (app && thinking) {
+              clearIdleInterval();
+              void setModelExpression(app as Parameters<typeof setModelExpression>[0], "f01");
+            } else if (app && !thinking) {
+              startIdleInterval();
+            }
+          }
           break;
         case "agent.reply":
         case "pet.speak":
           // 回复/说话 → 说话状态
           setPetState("speaking");
+          if (app) {
+            clearIdleInterval();
+            triggerLive2DForState(app, "speaking");
+          }
           break;
         case "error":
           // 出错回到待机，并显示错误消息
           setPetState("idle");
+          if (app) startIdleInterval();
           if (typeof event.data.error === "string") {
             addMessage({
               id: generateId(),
@@ -67,11 +140,12 @@ export function usePetEvent(): void {
     });
 
     return (): void => {
+      clearIdleInterval();
       void unlistenPromise.then((unlisten) => {
         unlisten();
       });
     };
-  }, [setPetState, addMessage, appendToLastAssistant]);
+  }, [setPetState, addMessage, appendToLastAssistant, clearIdleInterval, startIdleInterval]);
 }
 
 /**

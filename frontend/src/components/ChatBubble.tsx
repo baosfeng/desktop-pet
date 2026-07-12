@@ -36,6 +36,7 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
     return null;
   })();
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- sync typing index when new assistant message arrives
   useEffect(() => {
     if (latestAssistantIndex !== typingIndex) {
       setTypingIndex(latestAssistantIndex);

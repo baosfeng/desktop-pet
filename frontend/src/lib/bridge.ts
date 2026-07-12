@@ -41,6 +41,10 @@ export async function resizeWindow(width: number, height: number): Promise<void>
   await invoke("resize_window", { width, height });
 }
 
+export async function setWindowOpacity(opacity: number): Promise<void> {
+  await invoke("set_window_opacity", { opacity });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Tauri Events                                                       */
 /* ------------------------------------------------------------------ */
