@@ -36,8 +36,12 @@
   --color-text-brown: #4A3728;
 }
 
-/* 透明窗口需要 body 透明 */
+/* 透明窗口需要 body 透明（模型加载后通过 JS 设置） */
 body {
+  background: #FFF8E7;
+}
+
+body.live2d-loaded {
   background: transparent;
 }
 

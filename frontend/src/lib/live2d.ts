@@ -46,8 +46,8 @@ export async function initLive2D(
   options: Live2DOptions = {},
 ): Promise<Application | null> {
   try {
-    // 动态加载 pixi-live2d-display
-    const live2dModule = await import("pixi-live2d-display");
+    // 仅加载 Cubism 4 专有包（不需要 Cubism 2.1 的 live2d.min.js）
+    const live2dModule = await import("pixi-live2d-display/cubism4");
     Live2DModel = live2dModule.Live2DModel;
     CubismFramework = (live2dModule as any).CubismFramework;
 
@@ -98,9 +98,9 @@ export async function initLive2D(
 
     return app;
   } catch (err) {
-    console.warn("[Live2D] Failed to initialize:", err);
-    console.info("[Live2D] Place a .model3.json file and call initLive2D() with modelPath");
-    return null;
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.warn("[Live2D] Failed to initialize:", errorMsg);
+    throw new Error(errorMsg);
   }
 }
 

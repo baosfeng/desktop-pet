@@ -69,3 +69,14 @@ pub fn get_status(app_handle: AppHandle) -> tauri::Result<serde_json::Value> {
     }
     Ok(serde_json::json!({"state": "offline"}))
 }
+
+/// 从前端接收日志（调试用）
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value)]
+pub fn log_from_frontend(level: String, message: String) {
+    match level.as_str() {
+        "error" => log::error!("[FE] {message}"),
+        "warn" => log::warn!("[FE] {message}"),
+        _ => log::info!("[FE] {message}"),
+    }
+}

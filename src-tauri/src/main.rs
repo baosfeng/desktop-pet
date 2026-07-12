@@ -10,6 +10,8 @@ mod window;
 
 #[allow(clippy::exit)]
 fn main() {
+    env_logger::init();
+
     if let Err(e) = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
@@ -34,6 +36,7 @@ fn main() {
             commands::set_window_position,
             commands::chat,
             commands::get_status,
+            commands::log_from_frontend,
         ])
         .run(tauri::generate_context!())
     {

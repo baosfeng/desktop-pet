@@ -7,7 +7,7 @@
     "frontendDist": "../frontend/dist",
     "devUrl": "http://localhost:1420",
     "beforeDevCommand": "cd ../frontend && pnpm dev",
-    "beforeBuildCommand": "cd ../frontend && pnpm build"
+    "beforeBuildCommand": "true"
   },
   "app": {
     "windows": [
@@ -32,20 +32,15 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "externalBin": [
+      "binaries/petcore"
+    ],
     "icon": [
       "icons/32x32.png",
-      "icons/128x128.png"
+      "icons/128x128.png",
+      "icons/256x256.png",
+      "icons/512x512.png"
     ]
   },
-  "plugins": {
-    "shell": {
-      "scope": [
-        {
-          "name": "petcore-sidecar",
-          "sidecar": true,
-          "args": true
-        }
-      ]
-    }
-  }
+  "plugins": {}
 }

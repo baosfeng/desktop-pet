@@ -93,8 +93,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
             },
         };
 
-        // 使用 spawn 获取命令事件流和子进程句柄
-        let (mut rx, child) = match sidecar_cmd.args(["--mode", "sidecar"]).spawn() {
+        // sidecar 默认模式，无需额外参数
+        let (mut rx, child) = match sidecar_cmd.spawn() {
             Ok(spawned) => spawned,
             Err(_e) => {
                 error!("failed to spawn sidecar: {_e}");
