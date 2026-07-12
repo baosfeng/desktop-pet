@@ -101,6 +101,38 @@ func TestServer_GetStatus(t *testing.T) {
 	}
 }
 
+func TestServer_VerifyAPIKey(t *testing.T) {
+	stdin := strings.NewReader(`{"type":"cmd","id":"1","method":"verify_api_key","params":{"apiKey":"test-key","provider":"mock","baseUrl":"http://localhost","modelName":"mock-v1"}}` + "\n")
+	var stdout bytes.Buffer
+
+	srv := newTestServer(t, stdin, &stdout)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_ = srv.Run(ctx)
+
+	out := stdout.String()
+	if !strings.Contains(out, `"valid":true`) {
+		t.Errorf("expected valid:true in response, got: %s", out)
+	}
+}
+
+func TestServer_VerifyAPIKey_InvalidProvider(t *testing.T) {
+	stdin := strings.NewReader(`{"type":"cmd","id":"1","method":"verify_api_key","params":{"apiKey":"key","provider":"nonexistent","baseUrl":"http://localhost","modelName":"m"}}` + "\n")
+	var stdout bytes.Buffer
+
+	srv := newTestServer(t, stdin, &stdout)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_ = srv.Run(ctx)
+
+	out := stdout.String()
+	if !strings.Contains(out, `"error"`) {
+		t.Errorf("expected error response for unknown provider, got: %s", out)
+	}
+}
+
 func TestSinkAdapter_Send(t *testing.T) {
 	var stdout bytes.Buffer
 	srv := New(nil, nil, &stdout)

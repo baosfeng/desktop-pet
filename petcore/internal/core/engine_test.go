@@ -192,6 +192,35 @@ func (s *eventSink) Close() error {
 	return nil
 }
 
+func TestEngine_GetShortTerm(t *testing.T) {
+	eng := newTestEngine(t, false)
+	msgs := eng.GetShortTerm()
+	if msgs == nil {
+		t.Error("GetShortTerm returned nil, expected empty slice")
+	}
+	if len(msgs) != 0 {
+		t.Errorf("GetShortTerm len = %d, want 0", len(msgs))
+	}
+}
+
+func TestEngine_VerifyAPIKey_MockProvider(t *testing.T) {
+	eng := newTestEngine(t, false)
+	// Mock provider should always accept verification
+	err := eng.VerifyAPIKey("mock", "test-key", "http://localhost", "mock-v1")
+	if err != nil {
+		t.Errorf("VerifyAPIKey with mock provider should succeed, got: %v", err)
+	}
+}
+
+func TestEngine_VerifyAPIKey_InvalidProvider(t *testing.T) {
+	eng := newTestEngine(t, false)
+	// Non-existent provider should fail
+	err := eng.VerifyAPIKey("nonexistent-provider", "key", "http://localhost", "model")
+	if err == nil {
+		t.Error("VerifyAPIKey with unknown provider should fail")
+	}
+}
+
 func TestEngine_New_WithNilSink(t *testing.T) {
 	provider, _ := llm.NewProvider("mock", nil)
 	machine := fsm.NewMockMachine(fsm.StateIdle)
