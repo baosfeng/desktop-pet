@@ -1,7 +1,14 @@
 // Package openai 提供 OpenAI 兼容 API 的 LLM Provider。
 //
-// 支持 OpenAI、DeepSeek、硅基流动、Ollama（兼容模式）等所有
-// OpenAI 兼容格式的 API。在 init() 中自动注册为 "openai"。
+// 支持所有 OpenAI 兼容格式的 API 服务商，包括但不限于：
+//   - OpenAI（默认）
+//   - DeepSeek（配置 base_url=https://api.deepseek.com/v1，或使用 "deepseek" provider）
+//   - 硅基流动 / 通义千问 / Groq / Ollama（兼容模式）等任意兼容 API
+//
+// 使用 "openai" provider 时，通过 base_url 指向不同服务商即可切换。
+// 使用 "deepseek" provider 时，默认指向 DeepSeek 官方 API（也支持自定义 base_url）。
+//
+// 在 init() 中自动注册为 "openai"，deepseek 在同一包中注册。
 //
 // 配置方式（通过 llm.NewProvider 传入 cfg map）：
 //   - model:    模型名称（默认 gpt-4o-mini）
@@ -117,9 +124,10 @@ type choice struct {
 }
 
 type delta struct {
-	Role      string     `json:"role,omitempty"`
-	Content   string     `json:"content,omitempty"`
-	ToolCalls []toolCall `json:"tool_calls,omitempty"`
+	Role             string     `json:"role,omitempty"`
+	Content          string     `json:"content,omitempty"`
+	ReasoningContent string     `json:"reasoning_content,omitempty"` // DeepSeek reasoning model
+	ToolCalls        []toolCall `json:"tool_calls,omitempty"`
 }
 
 type apiError struct {
@@ -208,6 +216,11 @@ func (p *Provider) Stream(ctx context.Context, req llm.Request) (<-chan llm.Chun
 			// 文本增量
 			if c.Delta.Content != "" {
 				ch <- llm.Chunk{Type: llm.ChunkText, Text: c.Delta.Content}
+			}
+
+			// 推理过程（DeepSeek reasoning model 专用字段）
+			if c.Delta.ReasoningContent != "" {
+				ch <- llm.Chunk{Type: llm.ChunkReasoning, Text: c.Delta.ReasoningContent}
 			}
 
 			// 工具调用增量（仅第一个工具调用片段触发）
