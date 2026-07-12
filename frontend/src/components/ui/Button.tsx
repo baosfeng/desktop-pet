@@ -1,9 +1,9 @@
-import { type MotionStyle, motion } from "motion/react";
+import { motion } from "motion/react";
 import type React from "react";
 
 type ButtonVariant = "primary" | "accent" | "secondary" | "outline" | "ghost";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "style"> {
   variant?: ButtonVariant;
   children: React.ReactNode;
 }
