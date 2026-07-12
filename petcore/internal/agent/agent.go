@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/desktop-pet/petcore/internal/event"
+	"github.com/desktop-pet/petcore/internal/feature"
 	"github.com/desktop-pet/petcore/internal/llm"
 	"github.com/desktop-pet/petcore/internal/memory"
 	"github.com/desktop-pet/petcore/internal/tool"
@@ -43,6 +44,11 @@ func WithToolRegistry(r tool.Registry) Option {
 	return func(a *agentImpl) { a.tool = r }
 }
 
+// WithFlags 注入功能开关。
+func WithFlags(f *feature.Flags) Option {
+	return func(a *agentImpl) { a.flags = f }
+}
+
 // New 创建一个新的 Agent 实例。
 // provider 是必需的，其他依赖通过 Option 注入。
 func New(provider llm.Provider, opts ...Option) Agent {
@@ -62,6 +68,7 @@ type agentImpl struct {
 	provider llm.Provider
 	memory   memory.Manager
 	tool     tool.Registry
+	flags    *feature.Flags
 	sink     event.Sink
 }
 
@@ -80,9 +87,9 @@ func (a *agentImpl) Run(ctx context.Context, req Request) error {
 	// Pipeline 各阶段串联
 	pipeline := NewPipeline(
 		&PreProcessStage{},
-		&MemoryStage{memory: a.memory},
-		&LLMCallStage{provider: a.provider, sink: a.sink, tool: a.tool},
-		&PostProcessStage{memory: a.memory, sink: a.sink},
+		&MemoryStage{memory: a.memory, flags: a.flags},
+		&LLMCallStage{provider: a.provider, sink: a.sink, tool: a.tool, flags: a.flags},
+		&PostProcessStage{memory: a.memory, sink: a.sink, flags: a.flags},
 	)
 
 	// 构造内部上下文
