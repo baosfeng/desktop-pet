@@ -21,7 +21,7 @@ vi.mock("@/stores/petStore", () => ({
 
 describe("alias mock", () => {
   it("works", () => {
-    const settings = usePetStore((s: Record<string, unknown>) => s.settings as typeof s);
-    expect((settings as { baseUrl: string }).baseUrl).toBe("https://api.openai.com/v1");
+    const settings = usePetStore((s) => s);
+    expect(settings.settings.baseUrl).toBe("https://api.openai.com/v1");
   });
 });
