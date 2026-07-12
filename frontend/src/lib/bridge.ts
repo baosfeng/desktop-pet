@@ -37,6 +37,10 @@ export async function updateConfig(config: LLMConfig): Promise<void> {
   await invoke("update_config", { config });
 }
 
+export async function resizeWindow(width: number, height: number): Promise<void> {
+  await invoke("resize_window", { width, height });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Tauri Events                                                       */
 /* ------------------------------------------------------------------ */

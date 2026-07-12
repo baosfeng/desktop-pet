@@ -15,6 +15,13 @@ pub struct Position {
     pub y: f64,
 }
 
+/// 调整窗口大小
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value)]
+pub fn resize_window(app_handle: AppHandle, width: f64, height: f64) -> tauri::Result<()> {
+    window::resize_window(&app_handle, width, height)
+}
+
 /// 切换鼠标穿透状态
 #[tauri::command]
 #[allow(clippy::needless_pass_by_value)]

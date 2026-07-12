@@ -14,9 +14,9 @@ use tauri::{App, AppHandle, Manager};
 /// 宠物窗口标签名
 const WINDOW_LABEL: &str = "pet";
 /// 窗口默认宽度
-const WINDOW_DEFAULT_WIDTH: f64 = 300.0;
+const WINDOW_DEFAULT_WIDTH: f64 = 420.0;
 /// 窗口默认高度
-const WINDOW_DEFAULT_HEIGHT: f64 = 400.0;
+const WINDOW_DEFAULT_HEIGHT: f64 = 600.0;
 /// 交互超时后自动恢复穿透（秒）
 const CLICKTHROUGH_TIMEOUT_SECS: u64 = 5;
 /// 位置存储文件名
@@ -155,6 +155,20 @@ fn load_window_position(app: &App) -> Result<Position, Box<dyn std::error::Error
         x: clamped_x,
         y: clamped_y,
     })
+}
+
+/// 调整窗口大小。
+///
+/// # Errors
+///
+/// 当窗口未创建或 API 调用失败时返回错误。
+pub fn resize_window(app_handle: &AppHandle, width: f64, height: f64) -> tauri::Result<()> {
+    let window = app_handle
+        .get_webview_window(WINDOW_LABEL)
+        .ok_or_else(|| tauri::Error::WindowNotFound)?;
+
+    window.set_size(tauri::LogicalSize::new(width, height))?;
+    Ok(())
 }
 
 // ─── 公开常量 ────────────────────────────────

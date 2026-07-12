@@ -34,6 +34,7 @@ fn main() {
             commands::toggle_clickthrough,
             commands::get_window_position,
             commands::set_window_position,
+            commands::resize_window,
             commands::chat,
             commands::get_status,
             commands::update_config,
