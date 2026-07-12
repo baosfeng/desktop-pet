@@ -1,67 +1,47 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import type React from "react";
 
 import { ChatBubble } from "@/components/ChatBubble";
 import { SettingsPanel } from "@/components/SettingsPanel";
 
-import { type PetEvent, onPetEvent, sendMessage } from "@/lib/bridge";
+import { useChat, usePetEvent, useSettings } from "@/hooks/usePet";
+import { usePetStore } from "@/stores/petStore";
+
+import { initLive2D } from "@/lib/live2d";
 
 import "./App.css";
 
-export interface Message {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  timestamp: number;
-}
-
-let nextId = 0;
-
-function generateId(): string {
-  nextId += 1;
-  return `msg-${String(nextId)}-${String(Date.now())}`;
-}
-
 export default function App(): React.JSX.Element {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [petState, setPetState] = useState<string>("idle");
-  const [showSettings, setShowSettings] = useState(false);
+  // 初始化事件监听
+  usePetEvent();
+
+  // 从 store 读取状态
+  const petState = usePetStore((s) => s.petState);
+  const settings = usePetStore((s) => s.settings);
+  const { messages, sendMessage } = useChat();
+  const { showSettings, toggleSettings } = useSettings();
+
+  // Live2D 初始化
+  const appRef = useRef<Awaited<ReturnType<typeof initLive2D>>>(null);
 
   useEffect(() => {
-    const unlistenPromise = onPetEvent((event: PetEvent) => {
-      setPetState(event.kind);
+    const canvas = document.getElementById("live2d-canvas") as HTMLCanvasElement | null;
+    if (!canvas) return;
 
-      if (event.kind === "message" && typeof event.data.text === "string") {
-        const msg: Message = {
-          id: generateId(),
-          role: "assistant",
-          content: event.data.text,
-          timestamp: Date.now(),
-        };
-        setMessages((prev) => [...prev, msg]);
-      }
+    const modelPath = ""; // 需要在 public/models/ 下放置模型文件
+    initLive2D(canvas, {
+      modelPath,
+      scale: 0.5,
+    }).then((app) => {
+      appRef.current = app;
     });
 
     return (): void => {
-      void unlistenPromise.then((unlisten) => {
-        unlisten();
-      });
+      if (appRef.current) {
+        appRef.current.destroy(true);
+        appRef.current = null;
+      }
     };
-  }, []);
-
-  const handleSendMessage = useCallback((text: string) => {
-    const userMsg: Message = {
-      id: generateId(),
-      role: "user",
-      content: text,
-      timestamp: Date.now(),
-    };
-    setMessages((prev) => [...prev, userMsg]);
-    void sendMessage(text);
-  }, []);
-
-  const handleToggleSettings = useCallback(() => {
-    setShowSettings((prev) => !prev);
   }, []);
 
   return (
@@ -70,18 +50,18 @@ export default function App(): React.JSX.Element {
         <canvas id="live2d-canvas" className="live2d-canvas" />
       </div>
 
-      <ChatBubble messages={messages} onSendMessage={handleSendMessage} />
+      <ChatBubble messages={messages} onSendMessage={sendMessage} />
 
       <button
         className="settings-toggle"
-        onClick={handleToggleSettings}
+        onClick={toggleSettings}
         type="button"
         aria-label="设置"
       >
         ⚙
       </button>
 
-      {showSettings && <SettingsPanel onClose={handleToggleSettings} />}
+      {showSettings && <SettingsPanel onClose={toggleSettings} />}
     </div>
   );
 }

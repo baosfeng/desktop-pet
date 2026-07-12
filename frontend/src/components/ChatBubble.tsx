@@ -3,16 +3,11 @@ import type React from "react";
 
 import ReactMarkdown from "react-markdown";
 
+import type { Message } from "@/stores/petStore";
+
 interface ChatBubbleProps {
   messages: Message[];
   onSendMessage: (text: string) => void;
-}
-
-export interface Message {
-  id: string;
-  role: "user" | "assistant" | "system";
-  content: string;
-  timestamp: number;
 }
 
 const TYPEWRITER_SPEED_MS = 30;
