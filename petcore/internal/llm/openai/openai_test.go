@@ -1,3 +1,4 @@
+//nolint:errcheck // HTTP 测试 handler 中的 Encode/Write 错误在测试中可安全忽略
 package openai
 
 import (
@@ -66,7 +67,7 @@ func TestChat_NonStreaming(t *testing.T) {
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	})
 	defer srv.Close()
 
@@ -88,19 +89,19 @@ func TestStream_ReturnsTextChunks(t *testing.T) {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.WriteHeader(http.StatusOK)
 
-		w.Write([]byte("data: "))
-		json.NewEncoder(w).Encode(chatResponse{
+		_, _ = w.Write([]byte("data: "))
+		_ = json.NewEncoder(w).Encode(chatResponse{
 			Choices: []choice{{Delta: delta{Content: "Hel"}, FinishReason: ""}},
 		})
-		w.Write([]byte("\n\ndata: "))
-		json.NewEncoder(w).Encode(chatResponse{
+		_, _ = w.Write([]byte("\n\ndata: "))
+		_ = json.NewEncoder(w).Encode(chatResponse{
 			Choices: []choice{{Delta: delta{Content: "lo"}, FinishReason: ""}},
 		})
-		w.Write([]byte("\n\ndata: "))
-		json.NewEncoder(w).Encode(chatResponse{
+		_, _ = w.Write([]byte("\n\ndata: "))
+		_ = json.NewEncoder(w).Encode(chatResponse{
 			Choices: []choice{{Delta: delta{Content: ""}, FinishReason: "stop"}},
 		})
-		w.Write([]byte("\n\ndata: [DONE]\n\n"))
+		_, _ = w.Write([]byte("\n\ndata: [DONE]\n\n"))
 	})
 	defer srv.Close()
 
@@ -130,7 +131,7 @@ func TestStream_ReturnsTextChunks(t *testing.T) {
 func TestChat_HTTPError(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(chatResponse{
+		_ = json.NewEncoder(w).Encode(chatResponse{
 			Error: &apiError{Message: "Invalid API key"},
 		})
 	})
@@ -170,7 +171,7 @@ func TestInit_MissingAPIKey(t *testing.T) {
 func TestStream_HTTPErrorResponse(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(chatResponse{
+		_ = json.NewEncoder(w).Encode(chatResponse{
 			Error: &apiError{Message: "Invalid API key"},
 		})
 	})
@@ -201,8 +202,8 @@ func TestStream_ToolCallsFinish(t *testing.T) {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.WriteHeader(http.StatusOK)
 
-		w.Write([]byte("data: "))
-		json.NewEncoder(w).Encode(chatResponse{
+		_, _ = w.Write([]byte("data: "))
+		_ = json.NewEncoder(w).Encode(chatResponse{
 			Choices: []choice{{
 				Delta: delta{
 					Content: "",
@@ -218,11 +219,11 @@ func TestStream_ToolCallsFinish(t *testing.T) {
 				FinishReason: "",
 			}},
 		})
-		w.Write([]byte("\n\ndata: "))
-		json.NewEncoder(w).Encode(chatResponse{
+		_, _ = w.Write([]byte("\n\ndata: "))
+		_ = json.NewEncoder(w).Encode(chatResponse{
 			Choices: []choice{{Delta: delta{}, FinishReason: "tool_calls"}},
 		})
-		w.Write([]byte("\n\ndata: [DONE]\n\n"))
+		_, _ = w.Write([]byte("\n\ndata: [DONE]\n\n"))
 	})
 	defer srv.Close()
 
@@ -273,7 +274,7 @@ func TestExtractToolCallID(t *testing.T) {
 func TestChat_NoChoices(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(chatResponse{Choices: []choice{}})
+		_ = json.NewEncoder(w).Encode(chatResponse{Choices: []choice{}})
 	})
 	defer srv.Close()
 

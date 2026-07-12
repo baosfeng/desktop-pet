@@ -1,3 +1,4 @@
+//nolint:errcheck,gosec // HTTP 测试 handler 中的 Encode/Write 错误在测试中可安全忽略
 package ollama
 
 import (
@@ -34,7 +35,7 @@ func TestProvider_Name(t *testing.T) {
 func TestChat_NonStreaming(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ollamaChatResponse{
+		_ = json.NewEncoder(w).Encode(ollamaChatResponse{
 			Message: &ollamaMessage{
 				Role:    "assistant",
 				Content: "Hello from Ollama!",
@@ -61,20 +62,20 @@ func TestStream_ReturnsTextChunks(t *testing.T) {
 		w.Header().Set("Content-Type", "application/x-ndjson")
 		w.WriteHeader(http.StatusOK)
 
-		json.NewEncoder(w).Encode(ollamaChatResponse{
+		_ = json.NewEncoder(w).Encode(ollamaChatResponse{
 			Message: &ollamaMessage{Content: "Hel"},
 			Done:    false,
 		})
-		w.Write([]byte("\n"))
-		json.NewEncoder(w).Encode(ollamaChatResponse{
+		_, _ = w.Write([]byte("\n"))
+		_ = json.NewEncoder(w).Encode(ollamaChatResponse{
 			Message: &ollamaMessage{Content: "lo"},
 			Done:    false,
 		})
-		w.Write([]byte("\n"))
-		json.NewEncoder(w).Encode(ollamaChatResponse{
+		_, _ = w.Write([]byte("\n"))
+		_ = json.NewEncoder(w).Encode(ollamaChatResponse{
 			Done: true,
 		})
-		w.Write([]byte("\n"))
+		_, _ = w.Write([]byte("\n"))
 	})
 	defer srv.Close()
 
@@ -104,7 +105,7 @@ func TestStream_ReturnsTextChunks(t *testing.T) {
 func TestChat_HTTPError(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(ollamaChatResponse{
+		_ = json.NewEncoder(w).Encode(ollamaChatResponse{
 			Error: "internal error",
 		})
 	})
@@ -134,7 +135,7 @@ func TestInit_WithFactory(t *testing.T) {
 func TestStream_HTTPError(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(ollamaChatResponse{
+		_ = json.NewEncoder(w).Encode(ollamaChatResponse{
 			Error: "server error",
 		})
 	})
@@ -151,7 +152,7 @@ func TestStream_HTTPError(t *testing.T) {
 	for chunk := range ch {
 		if chunk.Type == llm.ChunkError {
 			gotError = true
-			_ = chunk.Error.Error() // ensure Error() is called
+			_ = chunk.Error.Error()
 		}
 	}
 	if !gotError {
@@ -162,7 +163,7 @@ func TestStream_HTTPError(t *testing.T) {
 func TestStream_NonJSONError(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte("upstream error"))
+		_, _ = w.Write([]byte("upstream error"))
 	})
 	defer srv.Close()
 
@@ -187,7 +188,7 @@ func TestStream_NonJSONError(t *testing.T) {
 func TestChat_NonJSONError(t *testing.T) {
 	srv, p := newTestServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte("upstream error"))
+		_, _ = w.Write([]byte("upstream error"))
 	})
 	defer srv.Close()
 

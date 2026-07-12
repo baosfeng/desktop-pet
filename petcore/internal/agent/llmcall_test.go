@@ -22,7 +22,7 @@ func TestLLMCallStage_ToolCallCycle(t *testing.T) {
 
 	toolReg := tool.NewRegistry()
 	// Register a test tool
-	toolReg.Register(&tool.MockTool{
+	_ = toolReg.Register(&tool.MockTool{
 		MockName:        "test_tool",
 		MockDescription: "A test tool",
 		MockExecute: func(_ context.Context, _ string) (string, error) {
