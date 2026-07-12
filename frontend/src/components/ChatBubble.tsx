@@ -1,12 +1,23 @@
-import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type React from "react";
 
-import type { Message } from "@/stores/petStore";
+import { Bubble, BubbleContent } from "@/components/ui/bubble";
+import {
+  Message,
+  MessageContent,
+  MessageFooter,
+} from "@/components/ui/message";
+import {
+  MessageScroller,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@/components/ui/message-scroller";
+
+import type { Message as MessageType } from "@/stores/petStore";
 
 interface ChatBubbleProps {
-  messages: Message[];
+  messages: MessageType[];
   onSendMessage: (text: string) => void;
 }
 
@@ -16,7 +27,6 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
   const [inputText, setInputText] = useState("");
   const [typingIndex, setTypingIndex] = useState<number | null>(null);
   const [visibleChars, setVisibleChars] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
 
   const latestAssistantIndex = ((): number | null => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -28,7 +38,7 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
 
   useEffect(() => {
     if (latestAssistantIndex !== typingIndex) {
-      setTypingIndex(latestAssistantIndex); // eslint-disable-line react-hooks/set-state-in-effect
+      setTypingIndex(latestAssistantIndex);
       setVisibleChars(0);
     }
   }, [latestAssistantIndex, typingIndex]);
@@ -38,16 +48,10 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
     const msg = messages[typingIndex];
     if (!msg) return;
     if (visibleChars < msg.content.length) {
-      const timer = setTimeout((): void => { setVisibleChars((p) => p + 1); }, TYPEWRITER_SPEED_MS);
-      return (): void => { clearTimeout(timer); };
+      const timer = setTimeout(() => { setVisibleChars((p) => p + 1); }, TYPEWRITER_SPEED_MS);
+      return () => { clearTimeout(timer); };
     }
   }, [typingIndex, visibleChars, messages]);
-
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight;
-    }
-  }, [messages, visibleChars]);
 
   const handleSubmit = useCallback(
     (e: React.SyntheticEvent) => {
@@ -61,82 +65,74 @@ export function ChatBubble({ messages, onSendMessage }: ChatBubbleProps): React.
   );
 
   return (
-    <motion.div
-      className="absolute bottom-4 left-4 right-4 z-50 flex flex-col max-h-[40vh] rounded-[16px] bg-cream border border-soft-brown/50 shadow-lg overflow-hidden"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      {/* Messages list */}
-      <div
-        className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 scrollbar-thin"
-        ref={listRef}
-        style={{ scrollbarWidth: "thin", scrollbarColor: "#D4E0C8 transparent" }}
-      >
-        <AnimatePresence initial={false}>
-          {messages.map((msg, idx) => {
-            const isTyping = idx === typingIndex && visibleChars < msg.content.length;
-            const displayContent =
-              idx === typingIndex ? msg.content.slice(0, visibleChars) : msg.content;
-            const isUser = msg.role === "user";
+    <div className="w-full h-full flex flex-col rounded-xl bg-base-100 border border-soft-brown/50 shadow-lg overflow-hidden">
+      {/* Messages area */}
+      <div className="flex-1 min-h-0">
+        <MessageScrollerProvider>
+          <MessageScroller>
+            <MessageScrollerViewport className="p-3 flex flex-col gap-3">
+              {messages.length === 0 && (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground/50 text-xs py-8">
+                  开始聊天吧 🐾
+                </div>
+              )}
+              {messages.map((msg, idx) => {
+                const isTyping = idx === typingIndex && visibleChars < msg.content.length;
+                const displayContent =
+                  idx === typingIndex ? msg.content.slice(0, visibleChars) : msg.content;
+                const isUser = msg.role === "user";
 
-            return (
-              <motion.div
-                key={msg.id}
-                className={`max-w-[85%] ${isUser ? "self-end" : "self-start"}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25 }}
-              >
-                <div
-                  className={`text-[11px] font-semibold mb-[2px] uppercase tracking-[0.5px] ${
-                    isUser ? "text-right text-peach/70" : "text-secondary/70"
-                  }`}
-                >
-                  {isUser ? "你" : "宠物"}
-                </div>
-                <div
-                  className={`rounded-[12px] px-3 py-2 text-[13px] leading-[1.55] break-words ${
-                    isUser
-                      ? "bg-peach text-text-brown rounded-br-[4px]"
-                      : "bg-secondary text-text-brown rounded-bl-[4px]"
-                  }`}
-                >
-                  {isUser ? (
-                    <p>{displayContent}</p>
-                  ) : (
-                    <ReactMarkdown>{displayContent}</ReactMarkdown>
-                  )}
-                  {isTyping && <span className="inline-block ml-[1px] font-bold text-text-brown/60 animate-blink">|</span>}
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                return (
+                  <Message key={msg.id} align={isUser ? "end" : "start"}>
+                    <MessageContent>
+                      <Bubble variant={isUser ? "default" : "secondary"} align={isUser ? "end" : "start"}>
+                        <BubbleContent className={isUser ? "" : "bg-secondary/80"}>
+                          {isUser ? (
+                            <p className="text-sm">{displayContent}</p>
+                          ) : (
+                            <div className="text-sm prose prose-sm max-w-none prose-p:my-0.5 prose-headings:my-1">
+                              <ReactMarkdown>{displayContent}</ReactMarkdown>
+                            </div>
+                          )}
+                          {isTyping && (
+                            <span className="inline-block ml-0.5 font-bold text-foreground/60 animate-blink">|</span>
+                          )}
+                        </BubbleContent>
+                      </Bubble>
+                      {isUser && msg.content && !isTyping && (
+                        <MessageFooter>
+                          <span className="text-[10px] text-muted-foreground/40">已发送</span>
+                        </MessageFooter>
+                      )}
+                    </MessageContent>
+                  </Message>
+                );
+              })}
+            </MessageScrollerViewport>
+          </MessageScroller>
+        </MessageScrollerProvider>
       </div>
 
       {/* Input form */}
       <form
         onSubmit={handleSubmit}
-        className="flex gap-2 px-3 pb-3 pt-2 border-t border-soft-brown/30"
+        className="flex gap-2 px-3 pb-3 pt-2.5 border-t border-soft-brown/30 shrink-0"
       >
         <input
-          className="flex-1 px-3 py-2 border border-soft-brown/40 rounded-[8px] bg-cream text-text-brown text-[13px] outline-none focus:border-primary/60 transition-colors placeholder:text-text-brown/30"
+          className="flex-1 h-auto min-h-0 px-4 py-2.5 rounded-lg border border-soft-brown/40 bg-base-100 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
           type="text"
           placeholder="输入消息..."
           value={inputText}
           onChange={(e): void => { setInputText(e.target.value); }}
         />
-        <motion.button
-          className="px-4 py-2 border-none rounded-[8px] bg-primary text-primary-content text-[13px] font-medium cursor-pointer"
+        <button
+          className="shrink-0 h-auto min-h-0 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium cursor-pointer border-none transition-all duration-150 hover:opacity-90 active:scale-95"
           type="submit"
           aria-label="发送"
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
         >
           发送
-        </motion.button>
+        </button>
       </form>
-    </motion.div>
+    </div>
   );
 }
