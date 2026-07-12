@@ -4,6 +4,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/desktop-pet/petcore/internal/event"
 	"github.com/desktop-pet/petcore/internal/feature"
@@ -160,11 +161,13 @@ func (s *LLMCallStage) Process(ctx context.Context, pCtx *pipelineCtx, next Stag
 		}
 
 		// 发送思考事件
-		_ = pCtx.Sink.Send(event.Event{
+		if err := pCtx.Sink.Send(event.Event{
 			Kind: event.EventAgentThinking,
 			Data: map[string]bool{"status": true},
 			Meta: event.NewMeta("agent", ""),
-		})
+		}); err != nil {
+			slog.Default().Error("pipeline: send thinking event failed", "error", err)
+		}
 
 		stream, err := s.provider.Stream(ctx, req)
 		if err != nil {
@@ -177,10 +180,12 @@ func (s *LLMCallStage) Process(ctx context.Context, pCtx *pipelineCtx, next Stag
 		for chunk := range stream {
 			switch chunk.Type {
 			case llm.ChunkText:
-				_ = pCtx.Sink.Send(event.Event{
+				if err := pCtx.Sink.Send(event.Event{
 					Kind: event.EventAgentReply,
 					Data: map[string]any{"text": chunk.Text, "done": false},
-				})
+				}); err != nil {
+					slog.Default().Error("pipeline: send reply chunk failed", "error", err)
+				}
 				hasTools = false
 			case llm.ChunkToolCall:
 				if chunk.ToolCall != nil {
@@ -188,25 +193,31 @@ func (s *LLMCallStage) Process(ctx context.Context, pCtx *pipelineCtx, next Stag
 					hasTools = true
 				}
 			case llm.ChunkUsage:
-				_ = pCtx.Sink.Send(event.Event{
+				if err := pCtx.Sink.Send(event.Event{
 					Kind: event.EventMemoryUpdated,
 					Data: map[string]any{"usage": chunk.Usage},
-				})
+				}); err != nil {
+					slog.Default().Error("pipeline: send usage event failed", "error", err)
+				}
 			case llm.ChunkError:
-				_ = pCtx.Sink.Send(event.Event{
+				if err := pCtx.Sink.Send(event.Event{
 					Kind: event.EventError,
 					Data: map[string]string{"error": chunk.Error.Error()},
-				})
+				}); err != nil {
+					slog.Default().Error("pipeline: send error event failed", "error", err)
+				}
 				return chunk.Error
 			case llm.ChunkDone:
 				// Stream 结束
 			}
 		}
 
-		_ = pCtx.Sink.Send(event.Event{
+		if err := pCtx.Sink.Send(event.Event{
 			Kind: event.EventAgentThinking,
 			Data: map[string]bool{"status": false},
-		})
+		}); err != nil {
+			slog.Default().Error("pipeline: send thinking-done event failed", "error", err)
+		}
 
 		// 没有工具调用，或工具循环未启用 → 结束
 		if !hasTools || len(collectedToolCalls) == 0 || !enableToolLoop {
@@ -269,13 +280,15 @@ func (s *PostProcessStage) Process(ctx context.Context, pCtx *pipelineCtx, next 
 	}
 
 	// 发送记忆更新事件
-	_ = pCtx.Sink.Send(event.Event{
+	if err := pCtx.Sink.Send(event.Event{
 		Kind: event.EventMemoryUpdated,
 		Data: map[string]any{
 			"short_term_count": len(s.memory.GetShortTerm()),
 		},
 		Meta: event.NewMeta("agent", ""),
-	})
+	}); err != nil {
+		slog.Default().Error("pipeline: send memory-updated event failed", "error", err)
+	}
 
 	return next(ctx, pCtx)
 }

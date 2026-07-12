@@ -62,6 +62,15 @@ func New(engine *core.Engine, reader io.Reader, writer io.Writer) *Server {
 	}
 }
 
+// writeErrorEvent 发送一个 error 事件到父进程，通过 SinkAdapter 路径。
+func (s *Server) writeErrorEvent(msg string) {
+	s.writeJSON(WireEvent{
+		Type:  "event",
+		Event: "error",
+		Data:  map[string]string{"error": msg},
+	})
+}
+
 // Run 启动 sidecar 通信循环，阻塞直到上下文取消或 stdin 关闭。
 func (s *Server) Run(ctx context.Context) error {
 	scanner := bufio.NewScanner(s.reader)
@@ -109,6 +118,7 @@ func (s *Server) handleCommand(ctx context.Context, cmd Command) {
 			return
 		}
 		if err := s.engine.HandleInput(ctx, params.Text); err != nil {
+			s.writeErrorEvent(err.Error())
 			s.writeError(cmd.ID, err.Error())
 			return
 		}
@@ -159,7 +169,9 @@ func (s *Server) writeJSON(v any) {
 		return
 	}
 	data = append(data, '\n')
-	_, _ = s.writer.Write(data)
+	if _, err := s.writer.Write(data); err != nil {
+		s.log.Error("failed to write to stdout", "error", err)
+	}
 }
 
 // SinkAdapter 将 Server 的 writeJSON 适配为 Sink 接口，

@@ -56,6 +56,8 @@ pub fn chat(app_handle: AppHandle, text: String) -> tauri::Result<()> {
             "params": { "text": text }
         });
         writer.send(&cmd.to_string());
+    } else {
+        log::error!("chat message dropped: SidecarWriter not registered (sidecar not started yet?)");
     }
     Ok(())
 }
@@ -74,6 +76,7 @@ pub fn get_status(app_handle: AppHandle) -> tauri::Result<serde_json::Value> {
         writer.send(&cmd.to_string());
         return Ok(serde_json::json!({"queued": true}));
     }
+    log::warn!("get_status: sidecar not available, returning offline");
     Ok(serde_json::json!({"state": "offline"}))
 }
 
@@ -89,6 +92,8 @@ pub fn update_config(app_handle: AppHandle, config: serde_json::Value) -> tauri:
             "params": config
         });
         writer.send(&cmd.to_string());
+    } else {
+        log::error!("update_config dropped: SidecarWriter not registered");
     }
     Ok(())
 }

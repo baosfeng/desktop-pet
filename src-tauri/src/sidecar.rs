@@ -43,8 +43,14 @@ impl SidecarWriter {
         if let Ok(mut guard) = self.writer.lock()
             && let Some(ref mut child) = *guard
         {
-            let _ = child.write(json.as_bytes());
-            let _ = child.write(b"\n");
+            if let Err(e) = child.write(json.as_bytes()) {
+                error!("sidecar write error (command body): {e}");
+            }
+            if let Err(e) = child.write(b"\n") {
+                error!("sidecar write error (newline): {e}");
+            }
+        } else {
+            error!("sidecar not ready: writer is unavailable, command dropped: {json}");
         }
     }
 }
@@ -83,8 +89,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
         let shell = handle.shell();
         let sidecar_cmd = match shell.sidecar("petcore") {
             Ok(cmd) => cmd,
-            Err(_e) => {
-                error!("failed to create sidecar command: {_e}");
+            Err(e) => {
+                error!("failed to create sidecar command (binary='petcore'): {e}");
                 if attempt < max_retries - 1 {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                 }
@@ -95,8 +101,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
         // sidecar 默认模式，无需额外参数
         let (mut rx, child) = match sidecar_cmd.spawn() {
             Ok(spawned) => spawned,
-            Err(_e) => {
-                error!("failed to spawn sidecar: {_e}");
+            Err(e) => {
+                error!("failed to spawn sidecar (attempt {}/{}): {e}", attempt + 1, max_retries);
                 if attempt < max_retries - 1 {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                 }
@@ -129,21 +135,43 @@ pub async fn start_sidecar(handle: &AppHandle) {
                         // 解析 JSON 事件
                         match serde_json::from_str::<serde_json::Value>(trimmed) {
                             Ok(event_value) => {
-                                let kind = event_value
-                                    .get("event")
+                                // 检测是否为 resp 类型的错误响应
+                                let is_error_resp = event_value
+                                    .get("type")
                                     .and_then(|v| v.as_str())
-                                    .unwrap_or("unknown")
-                                    .to_string();
-                                let data = event_value
-                                    .get("data")
-                                    .cloned()
-                                    .unwrap_or(serde_json::Value::Null);
+                                    .map_or(false, |t| t == "resp")
+                                    && event_value.get("error").and_then(|v| v.as_str()).map_or(false, |e| !e.is_empty());
+
+                                let kind = if is_error_resp {
+                                    "error"
+                                } else {
+                                    event_value
+                                        .get("event")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("unknown")
+                                }
+                                .to_string();
+
+                                // 归一化 data 结构：error resp 提取 error 字段，event 类型提取 data 字段
+                                let data: serde_json::Value = if is_error_resp {
+                                    event_value
+                                        .get("error")
+                                        .map(|e| serde_json::json!({"error": e}))
+                                        .unwrap_or(serde_json::Value::Null)
+                                } else {
+                                    event_value
+                                        .get("data")
+                                        .cloned()
+                                        .unwrap_or(serde_json::Value::Null)
+                                };
 
                                 let pet_event = SidecarEvent { kind, data };
-                                let _ = handle_clone.emit("pet:event", &pet_event);
+                                if let Err(e) = handle_clone.emit("pet:event", &pet_event) {
+                                    error!("failed to emit pet:event to frontend: {e}");
+                                }
                             },
-                            Err(_e) => {
-                                warn!("failed to parse sidecar event: {_e}");
+                            Err(e) => {
+                                warn!("failed to parse sidecar event (data={}): {e}", trimmed);
                             },
                         }
                     },
@@ -172,8 +200,8 @@ pub async fn start_sidecar(handle: &AppHandle) {
                 info!("petcore sidecar exited normally");
                 return;
             },
-            Err(_e) => {
-                error!("petcore sidecar forward error: {_e}");
+            Err(e) => {
+                error!("petcore sidecar forward error: {e}");
                 if attempt < max_retries - 1 {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                 }
