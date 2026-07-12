@@ -132,7 +132,7 @@ func (m *InMemoryManager) Search(_ context.Context, query string, limit int) ([]
 		if limit > 0 && len(results) >= limit {
 			break
 		}
-		if contains(fact.Value, query) || contains(fact.Key, query) {
+		if strings.Contains(fact.Value, query) || strings.Contains(fact.Key, query) {
 			results = append(results, fact)
 		}
 	}
@@ -142,8 +142,4 @@ func (m *InMemoryManager) Search(_ context.Context, query string, limit int) ([]
 // NewMockManager 返回一个空的 InMemoryManager，供其他模块测试使用。
 func NewMockManager() *InMemoryManager {
 	return NewInMemoryManager()
-}
-
-func contains(s, substr string) bool {
-	return strings.Contains(s, substr)
 }
