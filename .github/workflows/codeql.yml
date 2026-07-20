@@ -55,7 +55,7 @@ jobs:
 
       # Node.js 用于 JS/TS 分析
       - if: matrix.language == 'javascript-typescript'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
 
